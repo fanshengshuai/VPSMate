@@ -13,6 +13,10 @@ This is special edition (fork) of VPSMate with many features not existing on VPS
     rm -rf /usr/local/vpsmate
     rm -f /etc/init.d/vpsmate
 
+#### 忘记用户名或密码
+    /usr/local/vpsmate/config.py username '用户名'
+    /usr/local/vpsmate/config.py password '密码'
+
 #### 功能
 
 * 快速在线安装、小巧且节省资源
