@@ -50,6 +50,7 @@ def listuser(fullinfo=True):
 
 def passwd(username, password):
     try:
+        shlex.split('LANG=en')
         cmd = shlex.split('passwd \'%s\'' % username)
     except:
         return False
