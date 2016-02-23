@@ -1452,12 +1452,12 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                 else:
                     if urlpath == '/':
                         servercfg.append('        location ~ ^/.+\.php {')
-                        servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;')
+                        #servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;')
                     else:
                         servercfg.append('        location ~ ^%s(/.+\.php) {' % urlpath)
                         servercfg.append('            root  %s;' % location['root'])
-                        servercfg.append('            set $fastcgi_script_alias $1;')
-                        servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_alias;')
+                        #servercfg.append('            set $fastcgi_script_alias $1;')
+                        #servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_alias;')
 
                     #servercfg.append('            fastcgi_index  index.php;')
                     #servercfg.append('            fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
