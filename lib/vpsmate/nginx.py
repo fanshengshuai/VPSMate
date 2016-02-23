@@ -1443,11 +1443,11 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
 
             if location.has_key('fastcgi_pass'):
                 if urlpath.startswith('~'):  # deal with old config
-                    servercfg.append('        fastcgi_index  index.php;')
-                    servercfg.append('        fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
-                    servercfg.append('        fastcgi_param PATH_INFO $fastcgi_path_info;')
-                    servercfg.append('        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
-                    servercfg.append('        include        fastcgi_params;')
+                    #servercfg.append('        fastcgi_index  index.php;')
+                    #servercfg.append('        fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
+                    #servercfg.append('        fastcgi_param PATH_INFO $fastcgi_path_info;')
+                    #servercfg.append('        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
+                    servercfg.append('        include        fastcgi.conf;')
                     servercfg.append('        fastcgi_pass   %s;' % location['fastcgi_pass'])
                 else:
                     if urlpath == '/':
@@ -1459,11 +1459,11 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                         servercfg.append('            set $fastcgi_script_alias $1;')
                         servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_alias;')
 
-                    servercfg.append('            fastcgi_index  index.php;')
-                    servercfg.append('            fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
-                    servercfg.append('            fastcgi_param PATH_INFO $fastcgi_path_info;')
-                    servercfg.append('            fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
-                    servercfg.append('            include        fastcgi_params;')
+                    #servercfg.append('            fastcgi_index  index.php;')
+                    #servercfg.append('            fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
+                    #servercfg.append('            fastcgi_param PATH_INFO $fastcgi_path_info;')
+                    #servercfg.append('            fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
+                    servercfg.append('            include        fastcgi.conf;')
                     servercfg.append('            fastcgi_pass   %s;' % location['fastcgi_pass'])
                     servercfg.append('        }')
             
