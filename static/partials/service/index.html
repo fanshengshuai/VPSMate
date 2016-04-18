@@ -40,6 +40,14 @@
 								<div srvminiop ng-init="name='Apache';service='httpd';urlname='apache'"></div>
 							</td>
 						</tr>
+						<tr>
+							<td>Tomcat</td>
+							<td ng-bind-html-unsafe="info['service.tomcat']['status'] | service.status"></td>
+							<td class="muted">J2EE 服务器</td>
+							<td>
+								<div srvminiop ng-init="name='Tomcat';service='tomcat';urlname='tomcat'"></div>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>
