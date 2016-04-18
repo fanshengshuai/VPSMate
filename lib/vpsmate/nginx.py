@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -9,9 +9,10 @@
 """Package for reading and writing nginx configuration.
 """
 
+import glob
 import os
 import re
-import glob
+
 import utils
 
 DEBUG = False
@@ -19,432 +20,431 @@ DEBUG = False
 # d stand for directive, and c stand for context
 DIRECTIVES = {
     # REF: http://wiki.nginx.org/CoreModule
-    'daemon':                       ['_'],
-    'env':                          ['_'],
-    'debug_points':                 ['_'],
-    'error_log':                    ['_', 'http', 'server', 'location'],
-    'include':                      ['_', 'http', 'server', 'location'],
-    'lock_file':                    ['_'],
-    'master_process':               ['_'],
-    'pcre_jit':                     ['_'],
-    'pid':                          ['_'],
-    'ssl_engine':                   ['_'],
-    'timer_resolution':             ['_'],
-    'user':                         ['_'],
-    'worker_cpu_affinity':          ['_'],
-    'worker_priority':              ['_'],
-    'worker_processes':             ['_'],
-    'worker_rlimit_core':           ['_'],
-    'worker_rlimit_nofile':         ['_'],
-    'worker_rlimit_sigpending':     ['_'],
-    'working_directory':            ['_'],
+    'daemon': ['_'],
+    'env': ['_'],
+    'debug_points': ['_'],
+    'error_log': ['_', 'http', 'server', 'location'],
+    'include': ['_', 'http', 'server', 'location'],
+    'lock_file': ['_'],
+    'master_process': ['_'],
+    'pcre_jit': ['_'],
+    'pid': ['_'],
+    'timer_resolution': ['_'],
+    'user': ['_'],
+    'worker_cpu_affinity': ['_'],
+    'worker_priority': ['_'],
+    'worker_processes': ['_'],
+    'worker_rlimit_core': ['_'],
+    'worker_rlimit_nofile': ['_'],
+    'worker_rlimit_sigpending': ['_'],
+    'working_directory': ['_'],
 
     # REF: http://wiki.nginx.org/EventsModule
-    'events':                       ['_'],
-    'accept_mutex':                 ['events'],
-    'accept_mutex_delay':           ['events'],
-    'debug_connection':             ['events'],
-    'devpoll_changes':              ['events'],
-    'devpoll_events':               ['events'],
-    'kqueue_changes':               ['events'],
-    'kqueue_events':                ['events'],
-    'epoll_events':                 ['events'],
-    'multi_accept':                 ['events'],
-    'rtsig_signo':                  ['events'],
-    'rtsig_overflow_events':        ['events'],
-    'rtsig_overflow_test':          ['events'],
-    'rtsig_overflow_threshold':     ['events'],
-    'use':                          ['events'],
-    'worker_connections':           ['events'],
+    'events': ['_'],
+    'accept_mutex': ['events'],
+    'accept_mutex_delay': ['events'],
+    'debug_connection': ['events'],
+    'devpoll_changes': ['events'],
+    'devpoll_events': ['events'],
+    'kqueue_changes': ['events'],
+    'kqueue_events': ['events'],
+    'epoll_events': ['events'],
+    'multi_accept': ['events'],
+    'rtsig_signo': ['events'],
+    'rtsig_overflow_events': ['events'],
+    'rtsig_overflow_test': ['events'],
+    'rtsig_overflow_threshold': ['events'],
+    'use': ['events'],
+    'worker_connections': ['events'],
 
     # REF: http://wiki.nginx.org/HttpCoreModule
-    'http':                         ['_'],
-    'aio':                          ['http', 'server', 'location'],
-    'alias':                        ['location'],
-    'chunked_transfer_encoding':    ['http', 'server', 'location'],
-    'client_body_in_file_only':     ['http', 'server', 'location'],
+    'http': ['_'],
+    'aio': ['http', 'server', 'location'],
+    'alias': ['location'],
+    'chunked_transfer_encoding': ['http', 'server', 'location'],
+    'client_body_in_file_only': ['http', 'server', 'location'],
     'client_body_in_single_buffer': ['http', 'server', 'location'],
-    'client_body_buffer_size':      ['http', 'server', 'location'],
-    'client_body_temp_path':        ['http', 'server', 'location'],
-    'client_body_timeout':          ['http', 'server', 'location'],
-    'client_header_buffer_size':    ['http', 'server'],
-    'client_header_timeout':        ['http', 'server'],
-    'client_max_body_size':         ['http', 'server', 'location'],
-    'connection_pool_size':         ['http', 'server'],
-    'default_type':                 ['http', 'server', 'location'],
-    'directio':                     ['http', 'server', 'location'],
-    'directio_alignment':           ['http', 'server', 'location'],
-    'disable_symlinks':             ['http', 'server', 'location'],
-    'error_page':                   ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'if_modified_since':            ['http', 'server', 'location'],
-    'ignore_invalid_headers':       ['http', 'server'],
-    'internal':                     ['location'],
-    'keepalive_disable':            ['http', 'server', 'location'],
-    'keepalive_timeout':            ['http', 'server', 'location'],
-    'keepalive_requests':           ['http', 'server', 'location'],
-    'large_client_header_buffers':  ['http', 'server'],
-    'limit_except':                 ['location'],
-    'limit_rate':                   ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'limit_rate_after':             ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'lingering_close':              ['http', 'server', 'location'],
-    'lingering_time':               ['http', 'server', 'location'],
-    'lingering_timeout':            ['http', 'server', 'location'],
-    'listen':                       ['server'],
-    'location':                     ['server', 'location'],
-    'log_not_found':                ['http', 'server', 'location'],
-    'log_subrequest':               ['http', 'server', 'location'],
-    'max_ranges':                   ['http', 'server', 'location'],
-    'merge_slashes':                ['http', 'server'],
-    'msie_padding':                 ['http', 'server', 'location'],
-    'msie_refresh':                 ['http', 'server', 'location'],
-    'open_file_cache':              ['http', 'server', 'location'],
-    'open_file_cache_errors':       ['http', 'server', 'location'],
-    'open_file_cache_min_uses':     ['http', 'server', 'location'],
-    'open_file_cache_valid':        ['http', 'server', 'location'],
-    'optimize_server_names':        ['http', 'server'],
-    'port_in_redirect':             ['http', 'server', 'location'],
-    'post_action':                  ['http', 'server', 'location'],
-    'postpone_output':              ['http', 'server', 'location'],
-    'read_ahead':                   ['http', 'server', 'location'],
-    'recursive_error_pages':        ['http', 'server', 'location'],
-    'request_pool_size':            ['http', 'server'],
-    'reset_timedout_connection':    ['http', 'server', 'location'],
-    'resolver':                     ['http', 'server', 'location'],
-    'resolver_timeout':             ['http', 'server', 'location'],
-    'root':                         ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'satisfy':                      ['http', 'server', 'location'],
-    'satisfy_any':                  ['http', 'server', 'location'],
-    'send_lowat':                   ['http', 'server', 'location'],
-    'send_timeout':                 ['http', 'server', 'location'],
-    'sendfile':                     ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'sendfile_max_chunk':           ['http', 'server', 'location'],
-    'server':                       ['http', 'upstream'],
-    'server_name':                  ['server'],
-    'server_name_in_redirect':      ['http', 'server', 'location'],
-    'server_names_hash_max_size':   ['http'],
-    'server_names_hash_bucket_size':['http'],
-    'server_tokens':                ['http', 'server', 'location'],
-    'tcp_nodelay':                  ['http', 'server', 'location'],
-    'tcp_nopush':                   ['http', 'server', 'location'],
-    'try_files':                    ['server', 'location'],
-    'types':                        ['http', 'server', 'location'],
-    'types_hash_bucket_size':       ['http', 'server', 'location'],
-    'types_hash_max_size':          ['http', 'server', 'location'],
-    'underscores_in_headers':       ['http', 'server'],
-    'variables_hash_bucket_size':   ['http'],
-    'variables_hash_max_size':      ['http'],
+    'client_body_buffer_size': ['http', 'server', 'location'],
+    'client_body_temp_path': ['http', 'server', 'location'],
+    'client_body_timeout': ['http', 'server', 'location'],
+    'client_header_buffer_size': ['http', 'server'],
+    'client_header_timeout': ['http', 'server'],
+    'client_max_body_size': ['http', 'server', 'location'],
+    'connection_pool_size': ['http', 'server'],
+    'default_type': ['http', 'server', 'location'],
+    'directio': ['http', 'server', 'location'],
+    'directio_alignment': ['http', 'server', 'location'],
+    'disable_symlinks': ['http', 'server', 'location'],
+    'error_page': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'if_modified_since': ['http', 'server', 'location'],
+    'ignore_invalid_headers': ['http', 'server'],
+    'internal': ['location'],
+    'keepalive_disable': ['http', 'server', 'location'],
+    'keepalive_timeout': ['http', 'server', 'location'],
+    'keepalive_requests': ['http', 'server', 'location'],
+    'large_client_header_buffers': ['http', 'server'],
+    'limit_except': ['location'],
+    'limit_rate': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'limit_rate_after': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'lingering_close': ['http', 'server', 'location'],
+    'lingering_time': ['http', 'server', 'location'],
+    'lingering_timeout': ['http', 'server', 'location'],
+    'listen': ['server'],
+    'location': ['server', 'location'],
+    'log_not_found': ['http', 'server', 'location'],
+    'log_subrequest': ['http', 'server', 'location'],
+    'max_ranges': ['http', 'server', 'location'],
+    'merge_slashes': ['http', 'server'],
+    'msie_padding': ['http', 'server', 'location'],
+    'msie_refresh': ['http', 'server', 'location'],
+    'open_file_cache': ['http', 'server', 'location'],
+    'open_file_cache_errors': ['http', 'server', 'location'],
+    'open_file_cache_min_uses': ['http', 'server', 'location'],
+    'open_file_cache_valid': ['http', 'server', 'location'],
+    'optimize_server_names': ['http', 'server'],
+    'port_in_redirect': ['http', 'server', 'location'],
+    'post_action': ['http', 'server', 'location'],
+    'postpone_output': ['http', 'server', 'location'],
+    'read_ahead': ['http', 'server', 'location'],
+    'recursive_error_pages': ['http', 'server', 'location'],
+    'request_pool_size': ['http', 'server'],
+    'reset_timedout_connection': ['http', 'server', 'location'],
+    'resolver': ['http', 'server', 'location'],
+    'resolver_timeout': ['http', 'server', 'location'],
+    'root': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'satisfy': ['http', 'server', 'location'],
+    'satisfy_any': ['http', 'server', 'location'],
+    'send_lowat': ['http', 'server', 'location'],
+    'send_timeout': ['http', 'server', 'location'],
+    'sendfile': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'sendfile_max_chunk': ['http', 'server', 'location'],
+    'server': ['http', 'upstream'],
+    'server_name': ['server'],
+    'server_name_in_redirect': ['http', 'server', 'location'],
+    'server_names_hash_max_size': ['http'],
+    'server_names_hash_bucket_size': ['http'],
+    'server_tokens': ['http', 'server', 'location'],
+    'tcp_nodelay': ['http', 'server', 'location'],
+    'tcp_nopush': ['http', 'server', 'location'],
+    'try_files': ['server', 'location'],
+    'types': ['http', 'server', 'location'],
+    'types_hash_bucket_size': ['http', 'server', 'location'],
+    'types_hash_max_size': ['http', 'server', 'location'],
+    'underscores_in_headers': ['http', 'server'],
+    'variables_hash_bucket_size': ['http'],
+    'variables_hash_max_size': ['http'],
 
     # REF: http://wiki.nginx.org/HttpAccessModule
-    'allow':                        ['http', 'server', 'location', 'limit_except'],
-    'deny':                         ['http', 'server', 'location', 'limit_except'],
+    'allow': ['http', 'server', 'location', 'limit_except'],
+    'deny': ['http', 'server', 'location', 'limit_except'],
 
     # REF: http://wiki.nginx.org/HttpAuthBasicModule
-    'auth_basic':                   ['http', 'server', 'location', 'limit_except'],
-    'auth_basic_user_file':         ['http', 'server', 'location', 'limit_except'],
+    'auth_basic': ['http', 'server', 'location', 'limit_except'],
+    'auth_basic_user_file': ['http', 'server', 'location', 'limit_except'],
 
     # REF: http://wiki.nginx.org/HttpAutoindexModule
-    'autoindex':                    ['http', 'server', 'location'],
-    'autoindex_exact_size':         ['http', 'server', 'location'],
-    'autoindex_localtime':          ['http', 'server', 'location'],
-    
+    'autoindex': ['http', 'server', 'location'],
+    'autoindex_exact_size': ['http', 'server', 'location'],
+    'autoindex_localtime': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpBrowserModule
-    'ancient_browser':              ['http', 'server', 'location'],
-    'ancient_browser_value':        ['http', 'server', 'location'],
-    'modern_browser':               ['http', 'server', 'location'],
-    'modern_browser_value':         ['http', 'server', 'location'],
-    
+    'ancient_browser': ['http', 'server', 'location'],
+    'ancient_browser_value': ['http', 'server', 'location'],
+    'modern_browser': ['http', 'server', 'location'],
+    'modern_browser_value': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpCharsetModule
-    'charset':                      ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'charset_map':                  ['http'],
-    'charset_types':                ['http', 'server', 'location'],
-    'override_charset':             ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'source_charset':               ['http', 'server', 'location', 'if in location', 'if'], #+if
-    
+    'charset': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'charset_map': ['http'],
+    'charset_types': ['http', 'server', 'location'],
+    'override_charset': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'source_charset': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+
     # REF: http://wiki.nginx.org/HttpEmptyGifModule
-    'empty_gif':                    ['location'],
-    
+    'empty_gif': ['location'],
+
     # REF: http://wiki.nginx.org/HttpFastcgiModule
-    'fastcgi_bind':                 ['http', 'server', 'location'],
-    'fastcgi_buffer_size':          ['http', 'server', 'location'],
-    'fastcgi_buffers':              ['http', 'server', 'location'],
-    'fastcgi_busy_buffers_size':    ['http', 'server', 'location'],
-    'fastcgi_cache':                ['http', 'server', 'location'],
-    'fastcgi_cache_bypass':         ['http', 'server', 'location'],
-    'fastcgi_cache_key':            ['http', 'server', 'location'],
-    'fastcgi_cache_lock':           ['http', 'server', 'location'],
-    'fastcgi_cache_lock_timeout':   ['http', 'server', 'location'],
-    'fastcgi_cache_methods':        ['http', 'server', 'location'],
-    'fastcgi_cache_min_uses':       ['http', 'server', 'location'],
-    'fastcgi_cache_path':           ['http'],
-    'fastcgi_cache_use_stale':      ['http', 'server', 'location'],
-    'fastcgi_cache_valid':          ['http', 'server', 'location'],
-    'fastcgi_connect_timeout':      ['http', 'server', 'location'],
-    'fastcgi_hide_header':          ['http', 'server', 'location'],
-    'fastcgi_ignore_client_abort':  ['http', 'server', 'location'],
-    'fastcgi_ignore_headers':       ['http', 'server', 'location'],
-    'fastcgi_index':                ['http', 'server', 'location'],
-    'fastcgi_intercept_errors':     ['http', 'server', 'location'],
-    'fastcgi_keep_conn':            ['http', 'server', 'location'],
-    'fastcgi_max_temp_file_size':   ['http', 'server', 'location'],
-    'fastcgi_next_upstream':        ['http', 'server', 'location'],
-    'fastcgi_no_cache':             ['http', 'server', 'location'],
-    'fastcgi_param':                ['http', 'server', 'location'],
-    'fastcgi_pass':                 ['location', 'if in location', 'if'], #+if
-    'fastcgi_pass_header':          ['http', 'server', 'location'],
-    'fastcgi_pass_request_body':    ['http', 'server', 'location'],
+    'fastcgi_bind': ['http', 'server', 'location'],
+    'fastcgi_buffer_size': ['http', 'server', 'location'],
+    'fastcgi_buffers': ['http', 'server', 'location'],
+    'fastcgi_busy_buffers_size': ['http', 'server', 'location'],
+    'fastcgi_cache': ['http', 'server', 'location'],
+    'fastcgi_cache_bypass': ['http', 'server', 'location'],
+    'fastcgi_cache_key': ['http', 'server', 'location'],
+    'fastcgi_cache_lock': ['http', 'server', 'location'],
+    'fastcgi_cache_lock_timeout': ['http', 'server', 'location'],
+    'fastcgi_cache_methods': ['http', 'server', 'location'],
+    'fastcgi_cache_min_uses': ['http', 'server', 'location'],
+    'fastcgi_cache_path': ['http'],
+    'fastcgi_cache_use_stale': ['http', 'server', 'location'],
+    'fastcgi_cache_valid': ['http', 'server', 'location'],
+    'fastcgi_connect_timeout': ['http', 'server', 'location'],
+    'fastcgi_hide_header': ['http', 'server', 'location'],
+    'fastcgi_ignore_client_abort': ['http', 'server', 'location'],
+    'fastcgi_ignore_headers': ['http', 'server', 'location'],
+    'fastcgi_index': ['http', 'server', 'location'],
+    'fastcgi_intercept_errors': ['http', 'server', 'location'],
+    'fastcgi_keep_conn': ['http', 'server', 'location'],
+    'fastcgi_max_temp_file_size': ['http', 'server', 'location'],
+    'fastcgi_next_upstream': ['http', 'server', 'location'],
+    'fastcgi_no_cache': ['http', 'server', 'location'],
+    'fastcgi_param': ['http', 'server', 'location'],
+    'fastcgi_pass': ['location', 'if in location', 'if'],  # +if
+    'fastcgi_pass_header': ['http', 'server', 'location'],
+    'fastcgi_pass_request_body': ['http', 'server', 'location'],
     'fastcgi_pass_request_headers': ['http', 'server', 'location'],
-    'fastcgi_read_timeout':         ['http', 'server', 'location'],
-    'fastcgi_redirect_errors':      ['http', 'server', 'location'],
-    'fastcgi_send_timeout':         ['http', 'server', 'location'],
-    'fastcgi_split_path_info':      ['location'],
-    'fastcgi_store':                ['http', 'server', 'location'],
-    'fastcgi_store_access':         ['http', 'server', 'location'],
+    'fastcgi_read_timeout': ['http', 'server', 'location'],
+    'fastcgi_redirect_errors': ['http', 'server', 'location'],
+    'fastcgi_send_timeout': ['http', 'server', 'location'],
+    'fastcgi_split_path_info': ['location'],
+    'fastcgi_store': ['http', 'server', 'location'],
+    'fastcgi_store_access': ['http', 'server', 'location'],
     'fastcgi_temp_file_write_size': ['http', 'server', 'location'],
-    'fastcgi_temp_path':            ['http', 'server', 'location'],
+    'fastcgi_temp_path': ['http', 'server', 'location'],
 
     # REF: http://wiki.nginx.org/HttpGeoModule
-    'geo':                          ['http'],
+    'geo': ['http'],
 
     # REF: http://wiki.nginx.org/HttpGzipModule
-    'gzip':                         ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'gzip_buffers':                 ['http', 'server', 'location'],
-    'gzip_comp_level':              ['http', 'server', 'location'],
-    'gzip_disable':                 ['http', 'server', 'location'],
-    'gzip_http_version':            ['http', 'server', 'location'],
-    'gzip_min_length':              ['http', 'server', 'location'],
-    'gzip_proxied':                 ['http', 'server', 'location'],
-    'gzip_types':                   ['http', 'server', 'location'],
-    'gzip_vary':                    ['http', 'server', 'location'],
-    
+    'gzip': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'gzip_buffers': ['http', 'server', 'location'],
+    'gzip_comp_level': ['http', 'server', 'location'],
+    'gzip_disable': ['http', 'server', 'location'],
+    'gzip_http_version': ['http', 'server', 'location'],
+    'gzip_min_length': ['http', 'server', 'location'],
+    'gzip_proxied': ['http', 'server', 'location'],
+    'gzip_types': ['http', 'server', 'location'],
+    'gzip_vary': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpHeadersModule
-    'add_header':                   ['http', 'server', 'location'],
-    'expires':                      ['http', 'server', 'location'],
-    
+    'add_header': ['http', 'server', 'location'],
+    'expires': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpIndexModule
-    'index':                        ['http', 'server', 'location'],
-    
+    'index': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpLimitReqModule
-    'limit_req':                    ['http', 'server', 'location'],
-    'limit_req_log_level':          ['http', 'server', 'location'],
-    'limit_req_zone':               ['http'],
+    'limit_req': ['http', 'server', 'location'],
+    'limit_req_log_level': ['http', 'server', 'location'],
+    'limit_req_zone': ['http'],
 
     # Deprecated in 1.1.8
     # REF: http://wiki.nginx.org/HttpLimitZoneModule
-    'limit_zone':                    ['http'],
-    #'limit_conn':                    ['http', 'server', 'location'],
-    #'limit_conn_log_level':          ['http', 'server', 'location'],
-    
+    'limit_zone': ['http'],
+    # 'limit_conn':                    ['http', 'server', 'location'],
+    # 'limit_conn_log_level':          ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpLimitConnModule
-    'limit_conn':                   ['http', 'server', 'location'],
-    'limit_conn_zone':              ['http'],
-    'limit_conn_log_level':         ['http', 'server', 'location'],
-    
+    'limit_conn': ['http', 'server', 'location'],
+    'limit_conn_zone': ['http'],
+    'limit_conn_log_level': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpLogModule
-    'access_log':                   ['http', 'server', 'location', 'if in location', 'limit_except', 'if'], #+if
-    'log_format':                   ['http'],
-    'open_log_file_cache':          ['http', 'server', 'location'],
-    
+    'access_log': ['http', 'server', 'location', 'if in location', 'limit_except', 'if'],  # +if
+    'log_format': ['http'],
+    'open_log_file_cache': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpMapModule
-    'map':                          ['http'],
-    'map_hash_max_size':            ['http'],
-    'map_hash_bucket_size':         ['http'],
-    
+    'map': ['http'],
+    'map_hash_max_size': ['http'],
+    'map_hash_bucket_size': ['http'],
+
     # REF: http://wiki.nginx.org/HttpMemcachedModule
-    'memcached_pass':               ['location', 'if in location', 'if'], #+if
-    'memcached_connect_timeout':    ['http', 'server', 'location'],
-    'memcached_read_timeout':       ['http', 'server', 'location'],
-    'memcached_send_timeout':       ['http', 'server', 'location'],
-    'memcached_buffer_size':        ['http', 'server', 'location'],
-    'memcached_next_upstream':      ['http', 'server', 'location'],
-    
+    'memcached_pass': ['location', 'if in location', 'if'],  # +if
+    'memcached_connect_timeout': ['http', 'server', 'location'],
+    'memcached_read_timeout': ['http', 'server', 'location'],
+    'memcached_send_timeout': ['http', 'server', 'location'],
+    'memcached_buffer_size': ['http', 'server', 'location'],
+    'memcached_next_upstream': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpProxyModule
-    'proxy_bind':                   ['http', 'server', 'location'],
-    'proxy_buffer_size':            ['http', 'server', 'location'],
-    'proxy_buffering':              ['http', 'server', 'location'],
-    'proxy_buffers':                ['http', 'server', 'location'],
-    'proxy_busy_buffers_size':      ['http', 'server', 'location'],
-    'proxy_cache':                  ['http', 'server', 'location'],
-    'proxy_cache_bypass':           ['http', 'server', 'location'],
-    'proxy_cache_key':              ['http', 'server', 'location'],
-    'proxy_cache_lock':             ['http', 'server', 'location'],
-    'proxy_cache_lock_timeout':     ['http', 'server', 'location'],
-    'proxy_cache_methods':          ['http', 'server', 'location'],
-    'proxy_cache_min_uses':         ['http', 'server', 'location'],
-    'proxy_cache_path':             ['http'],
-    'proxy_cache_use_stale':        ['http', 'server', 'location'],
-    'proxy_cache_valid':            ['http', 'server', 'location'],
-    'proxy_connect_timeout':        ['http', 'server', 'location'],
-    'proxy_cookie_domain':          ['http', 'server', 'location'],
-    'proxy_cookie_path':            ['http', 'server', 'location'],
-    'proxy_headers_hash_bucket_size':['http', 'server', 'location'],
-    'proxy_headers_hash_max_size':  ['http', 'server', 'location'],
-    'proxy_hide_header':            ['http', 'server', 'location'],
-    'proxy_http_version':           ['http', 'server', 'location'],
-    'proxy_ignore_client_abort':    ['http', 'server', 'location'],
-    'proxy_ignore_headers':         ['http', 'server', 'location'],
-    'proxy_intercept_errors':       ['http', 'server', 'location'],
-    'proxy_max_temp_file_size':     ['http', 'server', 'location'],
-    'proxy_method':                 ['http', 'server', 'location'],
-    'proxy_next_upstream':          ['http', 'server', 'location'],
-    'proxy_no_cache':               ['http', 'server', 'location'],
-    'proxy_pass':                   ['location', 'if in location', 'limit_except', 'if'], #+if
-    'proxy_pass_header':            ['http', 'server', 'location'],
-    'proxy_pass_request_body':      ['http', 'server', 'location'],
-    'proxy_pass_request_headers':   ['http', 'server', 'location'],
-    'proxy_redirect':               ['http', 'server', 'location'],
-    'proxy_read_timeout':           ['http', 'server', 'location'],
-    'proxy_redirect_errors':        ['http', 'server', 'location'],
-    'proxy_send_lowat':             ['http', 'server', 'location'],
-    'proxy_send_timeout':           ['http', 'server', 'location'],
-    'proxy_set_body':               ['http', 'server', 'location'],
-    'proxy_set_header':             ['http', 'server', 'location'],
-    'proxy_ssl_session_reuse':      ['http', 'server', 'location'],
-    'proxy_store':                  ['http', 'server', 'location'],
-    'proxy_store_access':           ['http', 'server', 'location'],
-    'proxy_temp_file_write_size':   ['http', 'server', 'location'],
-    'proxy_temp_path':              ['http', 'server', 'location'],
-    'proxy_upstream_fail_timeout':  ['http', 'server', 'location'],
-    'proxy_upstream_max_fails':     ['http', 'server', 'location'],
-    
+    'proxy_bind': ['http', 'server', 'location'],
+    'proxy_buffer_size': ['http', 'server', 'location'],
+    'proxy_buffering': ['http', 'server', 'location'],
+    'proxy_buffers': ['http', 'server', 'location'],
+    'proxy_busy_buffers_size': ['http', 'server', 'location'],
+    'proxy_cache': ['http', 'server', 'location'],
+    'proxy_cache_bypass': ['http', 'server', 'location'],
+    'proxy_cache_key': ['http', 'server', 'location'],
+    'proxy_cache_lock': ['http', 'server', 'location'],
+    'proxy_cache_lock_timeout': ['http', 'server', 'location'],
+    'proxy_cache_methods': ['http', 'server', 'location'],
+    'proxy_cache_min_uses': ['http', 'server', 'location'],
+    'proxy_cache_path': ['http'],
+    'proxy_cache_use_stale': ['http', 'server', 'location'],
+    'proxy_cache_valid': ['http', 'server', 'location'],
+    'proxy_connect_timeout': ['http', 'server', 'location'],
+    'proxy_cookie_domain': ['http', 'server', 'location'],
+    'proxy_cookie_path': ['http', 'server', 'location'],
+    'proxy_headers_hash_bucket_size': ['http', 'server', 'location'],
+    'proxy_headers_hash_max_size': ['http', 'server', 'location'],
+    'proxy_hide_header': ['http', 'server', 'location'],
+    'proxy_http_version': ['http', 'server', 'location'],
+    'proxy_ignore_client_abort': ['http', 'server', 'location'],
+    'proxy_ignore_headers': ['http', 'server', 'location'],
+    'proxy_intercept_errors': ['http', 'server', 'location'],
+    'proxy_max_temp_file_size': ['http', 'server', 'location'],
+    'proxy_method': ['http', 'server', 'location'],
+    'proxy_next_upstream': ['http', 'server', 'location'],
+    'proxy_no_cache': ['http', 'server', 'location'],
+    'proxy_pass': ['location', 'if in location', 'limit_except', 'if'],  # +if
+    'proxy_pass_header': ['http', 'server', 'location'],
+    'proxy_pass_request_body': ['http', 'server', 'location'],
+    'proxy_pass_request_headers': ['http', 'server', 'location'],
+    'proxy_redirect': ['http', 'server', 'location'],
+    'proxy_read_timeout': ['http', 'server', 'location'],
+    'proxy_redirect_errors': ['http', 'server', 'location'],
+    'proxy_send_lowat': ['http', 'server', 'location'],
+    'proxy_send_timeout': ['http', 'server', 'location'],
+    'proxy_set_body': ['http', 'server', 'location'],
+    'proxy_set_header': ['http', 'server', 'location'],
+    'proxy_ssl_session_reuse': ['http', 'server', 'location'],
+    'proxy_store': ['http', 'server', 'location'],
+    'proxy_store_access': ['http', 'server', 'location'],
+    'proxy_temp_file_write_size': ['http', 'server', 'location'],
+    'proxy_temp_path': ['http', 'server', 'location'],
+    'proxy_upstream_fail_timeout': ['http', 'server', 'location'],
+    'proxy_upstream_max_fails': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpRefererModule
-    'valid_referers':               ['server', 'location'],
+    'valid_referers': ['server', 'location'],
 
     # REF: http://wiki.nginx.org/HttpRewriteModule
-    'break':                        ['server', 'location', 'if'],
-    'if':                           ['server', 'location'],
-    'return':                       ['server', 'location', 'if'],
-    'rewrite':                      ['server', 'location', 'if'],
-    'rewrite_log':                  ['server', 'location', 'if'],
-    'set':                          ['server', 'location', 'if'],
-    'uninitialized_variable_warn':  ['server', 'location', 'if'],
-    
+    'break': ['server', 'location', 'if'],
+    'if': ['server', 'location'],
+    'return': ['server', 'location', 'if'],
+    'rewrite': ['server', 'location', 'if'],
+    'rewrite_log': ['server', 'location', 'if'],
+    'set': ['server', 'location', 'if'],
+    'uninitialized_variable_warn': ['server', 'location', 'if'],
+
     # REF: http://wiki.nginx.org/HttpScgiModule
-    'scgi_bind':                    ['http', 'server', 'location'],
-    'scgi_buffer_size':             ['http', 'server', 'location'],
-    'scgi_buffering':               ['http', 'server', 'location'],
-    'scgi_buffers':                 ['http', 'server', 'location'],
-    'scgi_busy_buffers_size':       ['http', 'server', 'location', 'if'],
-    'scgi_cache':                   ['http', 'server', 'location'],
-    'scgi_cache_bypass':            ['http', 'server', 'location'],
-    'scgi_cache_key':               ['http', 'server', 'location'],
-    'scgi_cache_methods':           ['http', 'server', 'location'],
-    'scgi_cache_min_uses':          ['http', 'server', 'location'],
-    'scgi_cache_path':              ['http'],
-    'scgi_cache_use_stale':         ['http', 'server', 'location'],
-    'scgi_cache_valid':             ['http', 'server', 'location'],
-    'scgi_connect_timeout':         ['http', 'server', 'location'],
-    'scgi_hide_header':             ['http', 'server', 'location'],
-    'scgi_ignore_client_abort':     ['http', 'server', 'location'],
-    'scgi_ignore_headers':          ['http', 'server', 'location'],
-    'scgi_intercept_errors':        ['http', 'server', 'location'],
-    'scgi_max_temp_file_size':      ['http', 'server', 'location'], #?
-    'scgi_next_upstream':           ['http', 'server', 'location'],
-    'scgi_no_cache':                ['http', 'server', 'location'],
-    'scgi_param':                   ['http', 'server', 'location'],
-    'scgi_pass':                    ['location', 'if in location', 'if'], #+if
-    'scgi_pass_header':             ['http', 'server', 'location'],
-    'scgi_pass_request_body':       ['http', 'server', 'location'],
-    'scgi_pass_request_headers':    ['http', 'server', 'location'],
-    'scgi_read_timeout':            ['http', 'server', 'location'],
-    'scgi_send_timeout':            ['http', 'server', 'location'],
-    'scgi_store':                   ['http', 'server', 'location'],
-    'scgi_store_access':            ['http', 'server', 'location'],
-    'scgi_temp_file_write_size':    ['http', 'server', 'location'],
-    'scgi_temp_path':               ['http', 'server', 'location'],
-    
+    'scgi_bind': ['http', 'server', 'location'],
+    'scgi_buffer_size': ['http', 'server', 'location'],
+    'scgi_buffering': ['http', 'server', 'location'],
+    'scgi_buffers': ['http', 'server', 'location'],
+    'scgi_busy_buffers_size': ['http', 'server', 'location', 'if'],
+    'scgi_cache': ['http', 'server', 'location'],
+    'scgi_cache_bypass': ['http', 'server', 'location'],
+    'scgi_cache_key': ['http', 'server', 'location'],
+    'scgi_cache_methods': ['http', 'server', 'location'],
+    'scgi_cache_min_uses': ['http', 'server', 'location'],
+    'scgi_cache_path': ['http'],
+    'scgi_cache_use_stale': ['http', 'server', 'location'],
+    'scgi_cache_valid': ['http', 'server', 'location'],
+    'scgi_connect_timeout': ['http', 'server', 'location'],
+    'scgi_hide_header': ['http', 'server', 'location'],
+    'scgi_ignore_client_abort': ['http', 'server', 'location'],
+    'scgi_ignore_headers': ['http', 'server', 'location'],
+    'scgi_intercept_errors': ['http', 'server', 'location'],
+    'scgi_max_temp_file_size': ['http', 'server', 'location'],  # ?
+    'scgi_next_upstream': ['http', 'server', 'location'],
+    'scgi_no_cache': ['http', 'server', 'location'],
+    'scgi_param': ['http', 'server', 'location'],
+    'scgi_pass': ['location', 'if in location', 'if'],  # +if
+    'scgi_pass_header': ['http', 'server', 'location'],
+    'scgi_pass_request_body': ['http', 'server', 'location'],
+    'scgi_pass_request_headers': ['http', 'server', 'location'],
+    'scgi_read_timeout': ['http', 'server', 'location'],
+    'scgi_send_timeout': ['http', 'server', 'location'],
+    'scgi_store': ['http', 'server', 'location'],
+    'scgi_store_access': ['http', 'server', 'location'],
+    'scgi_temp_file_write_size': ['http', 'server', 'location'],
+    'scgi_temp_path': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpSplitClientsModule
-    'split_clients':                ['http'],
-    
+    'split_clients': ['http'],
+
     # REF: http://wiki.nginx.org/HttpSsiModule
-    'ssi':                          ['http', 'server', 'location', 'if in location', 'if'], #+if
-    'ssi_silent_errors':            ['http', 'server', 'location'],
-    'ssi_types':                    ['http', 'server', 'location'],
-    'ssi_value_length':             ['http', 'server', 'location'],
-    
+    'ssi': ['http', 'server', 'location', 'if in location', 'if'],  # +if
+    'ssi_silent_errors': ['http', 'server', 'location'],
+    'ssi_types': ['http', 'server', 'location'],
+    'ssi_value_length': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpUpstreamModule
-    'ip_hash':                      ['upstream'],
-    'keepalive':                    ['upstream'],
-    'least_conn':                   ['upstream'],
-    #'server':                       ['upstream'],
-    'upstream':                     ['http'],
-    
+    'ip_hash': ['upstream'],
+    'keepalive': ['upstream'],
+    'least_conn': ['upstream'],
+    # 'server':                       ['upstream'],
+    'upstream': ['http'],
+
     # REF: http://wiki.nginx.org/HttpUseridModule
-    'userid':                       ['http', 'server', 'location'],
-    'userid_domain':                ['http', 'server', 'location'],
-    'userid_expires':               ['http', 'server', 'location'],
-    'userid_name':                  ['http', 'server', 'location'],
-    'userid_p3p':                   ['http', 'server', 'location'],
-    'userid_path':                  ['http', 'server', 'location'],
-    'userid_service':               ['http', 'server', 'location'],
-    
+    'userid': ['http', 'server', 'location'],
+    'userid_domain': ['http', 'server', 'location'],
+    'userid_expires': ['http', 'server', 'location'],
+    'userid_name': ['http', 'server', 'location'],
+    'userid_p3p': ['http', 'server', 'location'],
+    'userid_path': ['http', 'server', 'location'],
+    'userid_service': ['http', 'server', 'location'],
+
     # REF: http://wiki.nginx.org/HttpUwsgiModule
-    'uwsgi_bind':                   ['http', 'server', 'location'],
-    'uwsgi_buffer_size':            ['http', 'server', 'location'],
-    'uwsgi_buffering':              ['http', 'server', 'location'],
-    'uwsgi_buffers':                ['http', 'server', 'location'],
-    'uwsgi_busy_buffers_size':      ['http', 'server', 'location', 'if'],
-    'uwsgi_cache':                  ['http', 'server', 'location'],
-    'uwsgi_cache_bypass':           ['http', 'server', 'location'],
-    'uwsgi_cache_key':              ['http', 'server', 'location'],
-    'uwsgi_cache_lock':             ['http', 'server', 'location'],
-    'uwsgi_cache_lock_timeout':     ['http', 'server', 'location'],
-    'uwsgi_cache_methods':          ['http', 'server', 'location'],
-    'uwsgi_cache_min_uses':         ['http', 'server', 'location'],
-    'uwsgi_cache_path':             ['http', 'server', 'location'],
-    'uwsgi_cache_use_stale':        ['http', 'server', 'location'],
-    'uwsgi_cache_valid':            ['http', 'server', 'location'],
-    'uwsgi_connect_timeout':        ['http', 'server', 'location'],
-    'uwsgi_hide_header':            ['http', 'server', 'location'],
-    'uwsgi_ignore_client_abort':    ['http', 'server', 'location'],
-    'uwsgi_ignore_headers':         ['http', 'server', 'location'],
-    'uwsgi_intercept_errors':       ['http', 'server', 'location'],
-    'uwsgi_max_temp_file_size':     ['http', 'server', 'location'], #?
-    'uwsgi_modifier1':              ['server', 'location'],
-    'uwsgi_modifier2':              ['server', 'location'],
-    'uwsgi_next_upstream':          ['http', 'server', 'location'],
-    'uwsgi_no_cache':               ['http', 'server', 'location'],
-    'uwsgi_param':                  ['http', 'server', 'location'],
-    'uwsgi_pass':                   ['location', 'if in location', 'if'], #+if
-    'uwsgi_pass_header':            ['http', 'server', 'location'],
-    'uwsgi_pass_request_body':      ['http', 'server', 'location'],
-    'uwsgi_pass_request_headers':   ['http', 'server', 'location'],
-    'uwsgi_read_timeout':           ['http', 'server', 'location'],
-    'uwsgi_send_timeout':           ['http', 'server', 'location'],
-    'uwsgi_store':                  ['http', 'server', 'location'],
-    'uwsgi_store_access':           ['http', 'server', 'location'],
-    'uwsgi_string':                 ['server', 'location'],
-    'uwsgi_temp_file_write_size':   ['http', 'server', 'location', 'if'],
-    'uwsgi_temp_path':              ['http', 'server', 'location'],
+    'uwsgi_bind': ['http', 'server', 'location'],
+    'uwsgi_buffer_size': ['http', 'server', 'location'],
+    'uwsgi_buffering': ['http', 'server', 'location'],
+    'uwsgi_buffers': ['http', 'server', 'location'],
+    'uwsgi_busy_buffers_size': ['http', 'server', 'location', 'if'],
+    'uwsgi_cache': ['http', 'server', 'location'],
+    'uwsgi_cache_bypass': ['http', 'server', 'location'],
+    'uwsgi_cache_key': ['http', 'server', 'location'],
+    'uwsgi_cache_lock': ['http', 'server', 'location'],
+    'uwsgi_cache_lock_timeout': ['http', 'server', 'location'],
+    'uwsgi_cache_methods': ['http', 'server', 'location'],
+    'uwsgi_cache_min_uses': ['http', 'server', 'location'],
+    'uwsgi_cache_path': ['http', 'server', 'location'],
+    'uwsgi_cache_use_stale': ['http', 'server', 'location'],
+    'uwsgi_cache_valid': ['http', 'server', 'location'],
+    'uwsgi_connect_timeout': ['http', 'server', 'location'],
+    'uwsgi_hide_header': ['http', 'server', 'location'],
+    'uwsgi_ignore_client_abort': ['http', 'server', 'location'],
+    'uwsgi_ignore_headers': ['http', 'server', 'location'],
+    'uwsgi_intercept_errors': ['http', 'server', 'location'],
+    'uwsgi_max_temp_file_size': ['http', 'server', 'location'],  # ?
+    'uwsgi_modifier1': ['server', 'location'],
+    'uwsgi_modifier2': ['server', 'location'],
+    'uwsgi_next_upstream': ['http', 'server', 'location'],
+    'uwsgi_no_cache': ['http', 'server', 'location'],
+    'uwsgi_param': ['http', 'server', 'location'],
+    'uwsgi_pass': ['location', 'if in location', 'if'],  # +if
+    'uwsgi_pass_header': ['http', 'server', 'location'],
+    'uwsgi_pass_request_body': ['http', 'server', 'location'],
+    'uwsgi_pass_request_headers': ['http', 'server', 'location'],
+    'uwsgi_read_timeout': ['http', 'server', 'location'],
+    'uwsgi_send_timeout': ['http', 'server', 'location'],
+    'uwsgi_store': ['http', 'server', 'location'],
+    'uwsgi_store_access': ['http', 'server', 'location'],
+    'uwsgi_string': ['server', 'location'],
+    'uwsgi_temp_file_write_size': ['http', 'server', 'location', 'if'],
+    'uwsgi_temp_path': ['http', 'server', 'location'],
 
     # REF: http://wiki.nginx.org/HttpSslModule
-    'ssl':                          ['http', 'server'],
-    'ssl_certificate':              ['http', 'server'],
-    'ssl_certificate_key':          ['http', 'server'],
-    'ssl_ciphers':                  ['http', 'server'],
-    'ssl_client_certificate':       ['http', 'server'],
-    'ssl_crl':                      ['http', 'server'],
-    'ssl_dhparam':                  ['http', 'server'],
-    'ssl_prefer_server_ciphers':    ['http', 'server'],
-    'ssl_protocols':                ['http', 'server'],
-    'ssl_verify_client':            ['http', 'server'],
-    'ssl_verify_depth':             ['http', 'server'],
-    'ssl_session_cache':            ['http', 'server'],
-    'ssl_session_timeout':          ['http', 'server'],
-    'ssl_engine':                   ['http', 'server'],
-    
+    'ssl': ['http', 'server'],
+    'ssl_certificate': ['http', 'server'],
+    'ssl_certificate_key': ['http', 'server'],
+    'ssl_ciphers': ['http', 'server'],
+    'ssl_client_certificate': ['http', 'server'],
+    'ssl_crl': ['http', 'server'],
+    'ssl_dhparam': ['http', 'server'],
+    'ssl_prefer_server_ciphers': ['http', 'server'],
+    'ssl_protocols': ['http', 'server'],
+    'ssl_verify_client': ['http', 'server'],
+    'ssl_verify_depth': ['http', 'server'],
+    'ssl_session_cache': ['http', 'server'],
+    'ssl_session_timeout': ['http', 'server'],
+    'ssl_engine': ['http', 'server'],
+
     # REF: http://wiki.nginx.org/X-accel
     # no directive
 }
 # module name : can has param if act as a context
 # if False then a module name with param would considered a directive
 MODULES = {
-    'events':       False,
-    'http':         False,
-    'server':       False,
-    'upstream':     True,
-    'location':     True,
-    'types':        False,
-    'if':           True,
+    'events': False,
+    'http': False,
+    'server': False,
+    'upstream': True,
+    'location': True,
+    'types': False,
+    'if': True,
     'limit_except': True,
 }
 DEFAULTVALS = {
@@ -454,7 +454,8 @@ DEFAULTVALS = {
 NGINXCONF = '/etc/nginx/nginx.conf'
 SERVERCONF = '/etc/nginx/conf.d/'
 COMMENTFLAG = '#v#'
-GENBY='Generated by VPSMate'
+GENBY = 'Generated by VPSMate'
+
 
 def loadconfig(conf=None, getlineinfo=False):
     """Load nginx config and return a dict.
@@ -462,7 +463,8 @@ def loadconfig(conf=None, getlineinfo=False):
     if not conf: conf = NGINXCONF
     if not os.path.exists(conf): return False
     return _loadconfig(conf, getlineinfo)
-    
+
+
 def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
     """Recursively load nginx config and return a dict.
     """
@@ -484,7 +486,7 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
         context = context_stack[-1]
 
     line_buffer = []
-    
+
     with open(conf) as f:
         for line_i, line in enumerate(f):
             line = line.strip()
@@ -498,7 +500,7 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
                 line_disabled = True
 
             if not line or line.startswith('#'): continue
-            
+
             # deal with comment and detect vpsmate flag in comment
             fields = line.split('#', 1)
             line = fields[0].strip()
@@ -510,7 +512,7 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
             if line == '}':
                 if getlineinfo:
                     cconfig['_range']['end'] = {'file': file_i, 'line': [line_i, 1]}
-                if DEBUG: print context_stack, '-', context_stack[-1], 
+                if DEBUG: print context_stack, '-', context_stack[-1],
                 context_stack.pop()
                 context = context_stack[-1]
                 if DEBUG: print '=', context_stack
@@ -522,7 +524,7 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
             if line[-1] not in (';', '{', '}'):
                 line_buffer.append(line)
                 continue
-            elif len(line_buffer)>0:
+            elif len(line_buffer) > 0:
                 line_buffer.append(line)
                 line = ''.join(line_buffer)
                 line_count = len(line_buffer)
@@ -532,36 +534,36 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
 
             # only support one directive at a line
             ## one line may contain serveral directives
-            #parts = re.split('[;{}]', line)
-            #for part_i, part in enumerate(parts):
+            # parts = re.split('[;{}]', line)
+            # for part_i, part in enumerate(parts):
             #    if not part or part.startswith('#'): continue
             #    fields = part.split()
             fields = line.split()
             key = fields[0].strip(';')  # some directive have no value like ip_hash
-            #value = ' '.join(fields[1:]).strip()
+            # value = ' '.join(fields[1:]).strip()
             value = ' '.join(fields[1:]).strip(';')
 
             if DIRECTIVES.has_key(key) and context in DIRECTIVES[key]:
-                if (not MODULES.has_key(key)    # not in module name list
-                     or MODULES.has_key(key)    # or in module name list
-                        and not MODULES[key]    # and this module can't has param
-                        and value != '{'):      # but actually it has
+                if (not MODULES.has_key(key)  # not in module name list
+                    or MODULES.has_key(key)  # or in module name list
+                    and not MODULES[key]  # and this module can't has param
+                    and value != '{'):  # but actually it has
                     if getlineinfo:
-                        v = {'file': file_i, 'line': [line_i-line_count+1, line_count], 'value': value}
+                        v = {'file': file_i, 'line': [line_i - line_count + 1, line_count], 'value': value}
                     else:
                         v = value
                     if cconfig.has_key(key):
                         cconfig[key].append(v)
                     else:
                         cconfig[key] = [v]
-                    if key == 'include':    # expand include files
+                    if key == 'include':  # expand include files
                         includepath = value
                         if not includepath.startswith('/'):
                             includepath = os.path.join(os.path.dirname(config['_files'][0]), includepath)
                         confs = glob.glob(includepath)
                         # order by domain name, excluding tld
                         getdm = lambda x: x.split('/')[-1].split('.')[-3::-1]
-                        confs = sorted(confs, lambda x,y: cmp(getdm(x), getdm(y)))
+                        confs = sorted(confs, lambda x, y: cmp(getdm(x), getdm(y)))
                         for subconf in confs:
                             if os.path.exists(subconf):
                                 if DEBUG: print '\n**********', subconf, '\n'
@@ -578,16 +580,18 @@ def _loadconfig(conf, getlineinfo, config=None, context_stack=None):
                     cconfig = cconfig[context][-1]
                     value = value.strip('{').strip()
                     if getlineinfo:
-                        cconfig['_param'] =  {'file': file_i, 'line': [line_i-line_count+1, line_count], 'disabled': line_disabled, 'value': value}
+                        cconfig['_param'] = {'file': file_i, 'line': [line_i - line_count + 1, line_count],
+                                             'disabled': line_disabled, 'value': value}
                         # record the context range
-                        cconfig['_range'] = {'begin': {'file': file_i, 'line': [line_i-line_count+1, line_count]}}
+                        cconfig['_range'] = {'begin': {'file': file_i, 'line': [line_i - line_count + 1, line_count]}}
                         cconfig['_vpsmate'] = gen_by_vpsmate
                     else:
-                        cconfig['_param'] =  value
+                        cconfig['_param'] = value
                         cconfig['_disabled'] = line_disabled
                         cconfig['_vpsmate'] = gen_by_vpsmate
 
     return config
+
 
 def _context_gethttp(config=None):
     """Get http context config.
@@ -595,6 +599,7 @@ def _context_gethttp(config=None):
     if not config or config['_isdirty']:
         config = loadconfig(NGINXCONF, True)
     return config['_'][0]['http'][0]
+
 
 def _context_getservers(disabled=None, config=None, getlineinfo=True):
     """Get server context configs.
@@ -608,7 +613,8 @@ def _context_getservers(disabled=None, config=None, getlineinfo=True):
         return servers
     else:
         return [server for server in servers
-                if server['_param']['disabled']==disabled]
+                if server['_param']['disabled'] == disabled]
+
 
 def _context_getserver(ip, port, server_name, config=None, disabled=None, getlineinfo=True):
     """Get a server context config by server name.
@@ -633,6 +639,7 @@ def _context_getserver(ip, port, server_name, config=None, disabled=None, getlin
             return s
     return False
 
+
 def _context_getupstreams(server_name, config=None, disabled=None, getlineinfo=True):
     """Get upstream list related to a server.
     """
@@ -641,17 +648,18 @@ def _context_getupstreams(server_name, config=None, disabled=None, getlineinfo=T
     upstreams = http_get('upstream', config)
     if not upstreams: return False
     if getlineinfo:
-        upstreams = [upstream for upstream in upstreams 
-            if upstream['_param']['value'].startswith('backend_of_%s_' % server_name)]
+        upstreams = [upstream for upstream in upstreams
+                     if upstream['_param']['value'].startswith('backend_of_%s_' % server_name)]
     else:
-        upstreams = [upstream for upstream in upstreams 
-            if upstream['_param'].startswith('backend_of_%s_' % server_name)]
-        
+        upstreams = [upstream for upstream in upstreams
+                     if upstream['_param'].startswith('backend_of_%s_' % server_name)]
+
     if disabled == None or not getlineinfo:
         return upstreams
     else:
         return [upstream for upstream in upstreams
-                if upstream['_param']['disabled']==disabled]
+                if upstream['_param']['disabled'] == disabled]
+
 
 def _comment(filepath, start, end):
     """Commend some lines in the file.
@@ -660,11 +668,13 @@ def _comment(filepath, start, end):
     data = []
     with open(filepath) as f:
         for i, line in enumerate(f):
-            if i>=start and i<=end:
+            if i >= start and i <= end:
                 if not line.startswith(COMMENTFLAG): data.append(COMMENTFLAG)
             data.append(line)
-    with open(filepath, 'w') as f: f.write(''.join(data))
+    with open(filepath, 'w') as f:
+        f.write(''.join(data))
     return True
+
 
 def _uncomment(filepath, start, end):
     """Uncommend some lines in the file.
@@ -673,11 +683,13 @@ def _uncomment(filepath, start, end):
     data = []
     with open(filepath) as f:
         for i, line in enumerate(f):
-            if i>=start and i<=end:
+            if i >= start and i <= end:
                 while line.startswith(COMMENTFLAG): line = line[3:]
             data.append(line)
-    with open(filepath, 'w') as f: f.write(''.join(data))
+    with open(filepath, 'w') as f:
+        f.write(''.join(data))
     return True
+
 
 def _delete(filepath, start, end, delete_emptyfile=True):
     """Delete some lines in the file.
@@ -689,12 +701,14 @@ def _delete(filepath, start, end, delete_emptyfile=True):
     data = []
     with open(filepath) as f:
         for i, line in enumerate(f):
-            if i>=start and i<=end: continue
+            if i >= start and i <= end: continue
             data.append(line)
-    with open(filepath, 'w') as f: f.write(''.join(data))
+    with open(filepath, 'w') as f:
+        f.write(''.join(data))
     if delete_emptyfile:
         if ''.join(data).strip() == '': os.unlink(filepath)
     return True
+
 
 def _getcontextrange(context, config):
     """Return the range of the input context, including the file path.
@@ -708,6 +722,7 @@ def _getcontextrange(context, config):
     line_end = context['_range']['end']['line'][0]
     return [filepath, line_start, line_end]
 
+
 def _context_commentserver(ip, port, server_name, config=None):
     """Comment a context using VPSMate's special comment string '#v#'
     """
@@ -717,6 +732,7 @@ def _context_commentserver(ip, port, server_name, config=None):
     if not scontext: return False
     filepath, line_start, line_end = _getcontextrange(scontext, config)
     return _comment(filepath, line_start, line_end)
+
 
 def _context_uncommentserver(ip, port, server_name, config=None):
     """Uncomment a VPSMate's special-commented context.
@@ -728,6 +744,7 @@ def _context_uncommentserver(ip, port, server_name, config=None):
     filepath, line_start, line_end = _getcontextrange(scontext, config)
     return _uncomment(filepath, line_start, line_end)
 
+
 def _context_deleteserver(ip, port, server_name, config=None, disabled=None):
     """Delete a server context.
     """
@@ -738,6 +755,7 @@ def _context_deleteserver(ip, port, server_name, config=None, disabled=None):
     filepath, line_start, line_end = _getcontextrange(scontext, config)
     config['_isdirty'] = True
     return _delete(filepath, line_start, line_end)
+
 
 def _context_commentupstreams(server_name, config=None):
     """Comment upstreams by server names.
@@ -751,6 +769,7 @@ def _context_commentupstreams(server_name, config=None):
         if not _comment(filepath, line_start, line_end): return False
     return True
 
+
 def _context_uncommentupstreams(server_name, config=None):
     """Uncomment upstreams by server names.
     """
@@ -762,6 +781,7 @@ def _context_uncommentupstreams(server_name, config=None):
         filepath, line_start, line_end = _getcontextrange(upstream, config)
         if not _uncomment(filepath, line_start, line_end): return False
     return True
+
 
 def _context_deleteupstreams(server_name, config=None, disabled=None):
     """Delete upstreams by server name.
@@ -776,8 +796,9 @@ def _context_deleteupstreams(server_name, config=None, disabled=None):
             filepath, line_start, line_end = _getcontextrange(upstream, config)
             config['_isdirty'] = True
             if not _delete(filepath, line_start, line_end): return False
-            break   # only delete the first one
+            break  # only delete the first one
     return True
+
 
 def _context_http_init_limit_conn(config=None, version=None):
     """Init limit_conn_zone in http context.
@@ -826,7 +847,7 @@ def _context_http_init_limit_conn(config=None, version=None):
                 return True
             else:
                 return False
-        
+
 
 def _context_server_clear_default_server(ip, port, config=None):
     """Clear the default_server flag at specified ip:port.
@@ -840,11 +861,12 @@ def _context_server_clear_default_server(ip, port, config=None):
         for listen in listens:
             if 'default_server' in listen['value']:
                 _replace([(config['_files'][listen['file']], listen['line'][0], listen['line'][1])],
-                        ['listen %s;' % listen['value'].replace('default_server', '').strip()])
+                         ['listen %s;' % listen['value'].replace('default_server', '').strip()])
                 found = True
                 break
         if found: break
     return found
+
 
 def _replace(positions, lines):
     """Replace the lines specified in list positions to new lines.
@@ -869,7 +891,7 @@ def _replace(positions, lines):
         filepath, line_start, line_count = pos
         if not files.has_key(filepath): files[filepath] = []
         for i in range(line_count):
-            files[filepath].append(line_start+i)
+            files[filepath].append(line_start + i)
     # replace line by line
     for filepath, line_nums in files.iteritems():
         flines = []
@@ -895,7 +917,7 @@ def _replace(positions, lines):
                         # exceed the last old line, insert the rest new lines here
                         # detect the indent of the last line
                         space = ''
-                        if len(flines)>0: # last line exists
+                        if len(flines) > 0:  # last line exists
                             for c in flines[-1]:
                                 if c not in (' ', '\t'): break
                                 space += c
@@ -904,7 +926,9 @@ def _replace(positions, lines):
                         lines = []
                     flines.append(fline)
         # write back to file
-        with open(filepath, 'w') as f: f.write(''.join(flines))
+        with open(filepath, 'w') as f:
+            f.write(''.join(flines))
+
 
 def _insert(filepath, line_start, lines):
     """Insert the lines to the specified position.
@@ -916,27 +940,29 @@ def _insert(filepath, line_start, lines):
                 # detect the indent of the last not empty line
                 space = ''
                 flines_len = len(flines)
-                if flines_len>0: # last line exists
+                if flines_len > 0:  # last line exists
                     line_i = -1
                     while flines[line_i].strip() == '' and -line_i <= flines_len:
                         line_i -= 1
                     for c in flines[line_i]:
-                            if c not in (' ', '\t'): break
-                            space += c
+                        if c not in (' ', '\t'): break
+                        space += c
                     if flines[line_i].strip().endswith('{'):
                         space += '    '
                 for line in lines:
                     flines.append(''.join([space, line, '\n']))
             flines.append(fline)
     # write back to file
-    with open(filepath, 'w') as f: f.write(''.join(flines))
+    with open(filepath, 'w') as f:
+        f.write(''.join(flines))
+
 
 def _detect_engines(context):
     """Detect engines in context.
     """
     engine_flags = {
-        'root' : 'static',
-        'alias' : 'static_alias',
+        'root': 'static',
+        'alias': 'static_alias',
         'fastcgi_pass': 'fastcgi',
         'scgi_pass': 'scgi',
         'uwsgi_pass': 'uwsgi',
@@ -965,12 +991,14 @@ def _detect_engines(context):
         else:
             engines = filter(lambda a: a != 'static_alias', engines)
     return engines
-        
+
+
 def _isredirect(values):
     """Check if rewrite values is redirect.
     """
     return [v.split().pop() in ('redirect', 'permanent') for v in values]
-    
+
+
 def getservers(config=None):
     """Get servers from nginx configuration files.
 
@@ -996,13 +1024,13 @@ def getservers(config=None):
     }
     """
     if not config or config['_isdirty']:
-        config = loadconfig(NGINXCONF)   # do not need to load lineinfo
+        config = loadconfig(NGINXCONF)  # do not need to load lineinfo
     cnfservers = _context_getservers(config=config)
     servers = []
     for s in cnfservers:
         server = {}
         server['server_names'] = ' '.join(s['server_name']).split()
-        
+
         # parse server and port, and check if is default server
         server['listens'] = []
         for listen in s['listen']:
@@ -1023,7 +1051,7 @@ def getservers(config=None):
                         'port': fs[1],
                         'default_server': default_server
                     })
-        
+
         engines = _detect_engines(s)
         engine_orders = ['static', 'fastcgi', 'scgi', 'uwsgi', 'redirect', 'proxy', 'rewrite', 'return']
         engines = [(engine_orders.index(engine), engine) for engine in engines]
@@ -1032,16 +1060,17 @@ def getservers(config=None):
             server['engines'] = zip(*engines)[1]
         else:
             server['engines'] = []
-        
+
         # check the status of this server
         if s['_disabled']:
             server['status'] = 'off'
         else:
             server['status'] = 'on'
-        
+
         servers.append(server)
     return servers
-    
+
+
 def http_get(directive, config=None):
     """Get directive values in http context.
     """
@@ -1055,13 +1084,15 @@ def http_get(directive, config=None):
     else:
         return None
 
+
 def http_getfirst(directive, config=None):
     """Get the first value of the directive in http context.
     """
     values = http_get(directive, config)
     if values: return values[0]
     return None
-    
+
+
 def http_set(directive, values, config=None):
     """Set a directive in http context.
     
@@ -1091,9 +1122,10 @@ def http_set(directive, values, config=None):
         # some directive like proxy_cache_path should be declare before use the resource,
         # so we should insert it at the beginning
         begin = hcontext['_range']['begin']
-        _insert(config['_files'][begin['file']], begin['line'][0]+begin['line'][1], values)
-    
+        _insert(config['_files'][begin['file']], begin['line'][0] + begin['line'][1], values)
+
     config['_isdirty'] = True
+
 
 def disableserver(ip, port, server_name):
     """Disable a server.
@@ -1101,11 +1133,13 @@ def disableserver(ip, port, server_name):
     _context_commentupstreams(server_name)
     return _context_commentserver(ip, port, server_name)
 
+
 def enableserver(ip, port, server_name):
     """Enable a server.
     """
     _context_uncommentupstreams(server_name)
     return _context_uncommentserver(ip, port, server_name)
+
 
 def deleteserver(ip, port, server_name, disabled=None):
     """Delete a server.
@@ -1115,10 +1149,12 @@ def deleteserver(ip, port, server_name, disabled=None):
     _context_deleteupstreams(server_name, disabled=disabled)
     return _context_deleteserver(ip, port, server_name, disabled=disabled)
 
+
 def servername_exists(ip, port, server_name, config=None):
     """Check if the server_name at given ip:port is already exists.
     """
     return _context_getserver(ip, port, server_name, config=config) and True or False
+
 
 def getserver(ip, port, server_name, config=None):
     """Get server setting from nginx config files.
@@ -1151,18 +1187,18 @@ def getserver(ip, port, server_name, config=None):
                 listen['ip'] = ipport[0]
                 listen['port'] = ipport[1]
             server['listens'].append(listen)
-    
+
     if scontext.has_key('charset'): server['charset'] = scontext['charset'][-1]
     if scontext.has_key('index'): server['index'] = scontext['index'][-1]
-    if scontext.has_key('limit_rate'): server['limit_rate'] = scontext['limit_rate'][-1].replace('k','')
+    if scontext.has_key('limit_rate'): server['limit_rate'] = scontext['limit_rate'][-1].replace('k', '')
     if scontext.has_key('limit_conn'): server['limit_conn'] = scontext['limit_conn'][-1].split()[-1]
-    if scontext.has_key('ssl') and scontext['ssl'][-1] == 'on': # deal with old config file
+    if scontext.has_key('ssl') and scontext['ssl'][-1] == 'on':  # deal with old config file
         for listen in server['listens']: listen['ssl'] = True
     if scontext.has_key('ssl_certificate'): server['ssl_crt'] = scontext['ssl_certificate'][-1]
     if scontext.has_key('ssl_certificate_key'): server['ssl_key'] = scontext['ssl_certificate_key'][-1]
     if scontext.has_key('rewrite'):
         server['rewrite_rules'] = ['rewrite %s' % rule for rule in scontext['rewrite']]
-    
+
     server['locations'] = []
     if scontext.has_key('location'):
         locs = scontext['location']
@@ -1171,7 +1207,7 @@ def getserver(ip, port, server_name, config=None):
             location['urlpath'] = loc['_param']
             if loc.has_key('root'):
                 location['root'] = loc['root'][-1]
-            elif scontext.has_key('root'): # deal with old config file
+            elif scontext.has_key('root'):  # deal with old config file
                 location['root'] = scontext['root'][-1]
             if loc.has_key('alias'): location['root'] = loc['alias'][-1]
             if loc.has_key('autoindex'): location['autoindex'] = loc['autoindex'][-1] == 'on'
@@ -1187,7 +1223,7 @@ def getserver(ip, port, server_name, config=None):
                         location['rewrite_detect_file'] = True
                     if ifstm.has_key('rewrite'):
                         rewrites.extend(ifstm['rewrite'])
-            
+
             for rule in rewrites:
                 rwinfo = rule.split()
                 if rwinfo[-1] in ('permanent', 'redirect'):
@@ -1212,7 +1248,7 @@ def getserver(ip, port, server_name, config=None):
                 for l in loc['location']:
                     if l.has_key('fastcgi_pass'):
                         location['fastcgi_pass'] = l['fastcgi_pass'][-1]
-                    break   # only recoginze the first fastcgi setting
+                    break  # only recoginze the first fastcgi setting
 
             # detect proxy 
             if loc.has_key('proxy_pass'):
@@ -1239,7 +1275,8 @@ def getserver(ip, port, server_name, config=None):
                                 if upstream.has_key('ip_hash'): location['proxy_balance'] = 'ip_hash'
                                 if upstream.has_key('least_conn'): location['proxy_balance'] = 'least_conn'
                                 if not location.has_key('proxy_balance'): location['proxy_balance'] = 'weight'
-                                if upstream.has_key('keepalive'): location['proxy_keepalive'] = upstream['keepalive'][-1]
+                                if upstream.has_key('keepalive'): location['proxy_keepalive'] = upstream['keepalive'][
+                                    -1]
                                 if upstream.has_key('server'):
                                     location['proxy_backends'] = []
                                     for s in upstream['server']:
@@ -1252,9 +1289,10 @@ def getserver(ip, port, server_name, config=None):
                                             elif t.startswith('max_fails='):
                                                 backend['max_fails'] = t.replace('max_fails=', '')
                                             elif t.startswith('fail_timeout='):
-                                                backend['fail_timeout'] = t.replace('fail_timeout=', '').replace('s','')
+                                                backend['fail_timeout'] = t.replace('fail_timeout=', '').replace('s',
+                                                                                                                 '')
                                         location['proxy_backends'].append(backend)
-                                break # found the right upstream
+                                break  # found the right upstream
                 # detect proxy cache
                 if loc.has_key('proxy_cache'):
                     cachename = loc['proxy_cache'][-1]
@@ -1262,7 +1300,8 @@ def getserver(ip, port, server_name, config=None):
                         location['proxy_cache'] = cachename
                         if loc.has_key('proxy_cache_min_uses'):
                             location['proxy_cache_min_uses'] = loc['proxy_cache_min_uses'][-1]
-                        if loc.has_key('proxy_cache_methods') and 'POST' in loc['proxy_cache_methods'][-1].upper().split():
+                        if loc.has_key('proxy_cache_methods') and 'POST' in loc['proxy_cache_methods'][
+                            -1].upper().split():
                             location['proxy_cache_methods'] = 'POST'
                         if loc.has_key('proxy_cache_key'):
                             location['proxy_cache_key'] = loc['proxy_cache_key'][-1]
@@ -1272,7 +1311,7 @@ def getserver(ip, port, server_name, config=None):
                             location['proxy_cache_valid'] = []
                             for valid in loc['proxy_cache_valid']:
                                 fields = valid.split()
-                                for i in range(0, len(fields)-1):
+                                for i in range(0, len(fields) - 1):
                                     location['proxy_cache_valid'].append({'code': fields[i], 'time': fields[-1]})
                         if loc.has_key('proxy_cache_lock'):
                             location['proxy_cache_lock'] = loc['proxy_cache_lock'][-1].lower() == 'on'
@@ -1284,12 +1323,13 @@ def getserver(ip, port, server_name, config=None):
                 location['error_code'] = loc['return'][-1]
 
             server['locations'].append(location)
-    
+
     return server
-    
+
+
 def addserver(server_names, listens, charset=None, index=None, locations=None,
-    limit_rate=None, limit_conn=None, ssl_crt=None, ssl_key=None,
-    rewrite_rules=None, conflict_check=True, version=None):
+              limit_rate=None, limit_conn=None, ssl_crt=None, ssl_key=None,
+              rewrite_rules=None, conflict_check=True, version=None):
     """Add a new server.
     
     We create new config file for each server under /etc/nginx/conf.d/.
@@ -1380,7 +1420,7 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                 ip = listen.has_key('ip') and listen['ip'] or ''
                 if servername_exists(ip, listen['port'], server_name):
                     return False
-    
+
     # start generate the config string
     servercfg = ['server { # %s' % GENBY]
 
@@ -1400,7 +1440,7 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
             servercfg.append('    listen %s%s%s;' % (port, flag_ds, flag_ssl))
         # if set to default server, we should clear the default_server flag
         if flag_ds: _context_server_clear_default_server(ip, port)
-            
+
     servercfg.append('    server_name %s;' % (' '.join(server_names)))
 
     if charset: servercfg.append('    charset %s;' % charset)
@@ -1415,14 +1455,14 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
         servercfg.append('    ssl_ciphers ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP;')
         servercfg.append('    ssl_prefer_server_ciphers on;')
         servercfg.append('')
-    
+
     if index:
         servercfg.append('    index %s;' % index)
         servercfg.append('')
-    
+
     upstreams = {}
     if locations:
-        urlpaths = [] # use to detect if urlpath duplicates
+        urlpaths = []  # use to detect if urlpath duplicates
         for location in locations:
             urlpath = location['urlpath'].strip()
             if urlpath in urlpaths: return False
@@ -1443,30 +1483,30 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
 
             if location.has_key('fastcgi_pass'):
                 if urlpath.startswith('~'):  # deal with old config
-                    #servercfg.append('        fastcgi_index  index.php;')
-                    #servercfg.append('        fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
-                    #servercfg.append('        fastcgi_param PATH_INFO $fastcgi_path_info;')
-                    #servercfg.append('        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
+                    # servercfg.append('        fastcgi_index  index.php;')
+                    # servercfg.append('        fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
+                    # servercfg.append('        fastcgi_param PATH_INFO $fastcgi_path_info;')
+                    # servercfg.append('        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
                     servercfg.append('        include        fastcgi.conf;')
                     servercfg.append('        fastcgi_pass   %s;' % location['fastcgi_pass'])
                 else:
                     if urlpath == '/':
                         servercfg.append('        location ~ ^/.+\.php {')
-                        #servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;')
+                        # servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;')
                     else:
                         servercfg.append('        location ~ ^%s(/.+\.php) {' % urlpath)
                         servercfg.append('            root  %s;' % location['root'])
-                        #servercfg.append('            set $fastcgi_script_alias $1;')
-                        #servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_alias;')
+                        # servercfg.append('            set $fastcgi_script_alias $1;')
+                        # servercfg.append('            fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_alias;')
 
-                    #servercfg.append('            fastcgi_index  index.php;')
-                    #servercfg.append('            fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
-                    #servercfg.append('            fastcgi_param PATH_INFO $fastcgi_path_info;')
-                    #servercfg.append('            fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
+                    # servercfg.append('            fastcgi_index  index.php;')
+                    # servercfg.append('            fastcgi_split_path_info ^(.+\.php)(/?.+)$;')
+                    # servercfg.append('            fastcgi_param PATH_INFO $fastcgi_path_info;')
+                    # servercfg.append('            fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;')
                     servercfg.append('            include        fastcgi.conf;')
                     servercfg.append('            fastcgi_pass   %s;' % location['fastcgi_pass'])
                     servercfg.append('        }')
-            
+
             if location.has_key('rewrite_rules'):
                 rules = location['rewrite_rules']
                 if location.has_key('rewrite_detect_file') and location['rewrite_detect_file']:
@@ -1486,13 +1526,13 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                     redirect_option = location.has_key('redirect_option') and location['redirect_option'] or 'ignore'
                     if urlpath == '/' or redirect_option == 'ignore':
                         servercfg.append('        rewrite ^ %s%s %s;' % (redirect_url,
-                                redirect_option=='keep' and '$request_uri?' or '',
-                                redirect_type=='301' and 'permanent' or 'redirect'))
+                                                                         redirect_option == 'keep' and '$request_uri?' or '',
+                                                                         redirect_type == '301' and 'permanent' or 'redirect'))
                     else:
                         servercfg.append('        if ($request_uri ~ ^%s(/.+)$) {' % urlpath)
                         servercfg.append('            set $request_uri_alias $1;')
                         servercfg.append('            rewrite ^ %s$request_uri_alias? %s;' % (redirect_url,
-                                redirect_type=='301' and 'permanent' or 'redirect'))
+                                                                                              redirect_type == '301' and 'permanent' or 'redirect'))
                         servercfg.append('        }')
 
             if location.has_key('proxy_backends') and location['proxy_backends']:
@@ -1526,7 +1566,8 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                     for v in location['proxy_cache_valid']:
                         servercfg.append('        proxy_cache_valid %s %s;' % (v['code'], v['time']))
                 if location.has_key('proxy_cache_use_stale'):
-                    servercfg.append('        proxy_cache_use_stale %s;' % (' '.join(location['proxy_cache_use_stale'])))
+                    servercfg.append(
+                        '        proxy_cache_use_stale %s;' % (' '.join(location['proxy_cache_use_stale'])))
                 if location.has_key('proxy_cache_lock') and location['proxy_cache_lock']:
                     servercfg.append('        proxy_cache_lock on;')
                     if location.has_key('proxy_cache_lock_timeout'):
@@ -1550,7 +1591,7 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
 
         servercfg.append('upstream %s { # %s' % (upstream_name, GENBY))
 
-        if len(backends) > 1: # have balance options
+        if len(backends) > 1:  # have balance options
             if balance == 'ip_hash': servercfg.append('    ip_hash;')
             if balance == 'least_conn': servercfg.append('    least_conn;')
             if upstream['keepalive']: servercfg.append('    keepalive %s;' % upstream['keepalive'])
@@ -1563,13 +1604,13 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                 if backend.has_key('max_fails') and backend['max_fails']:
                     max_fails = ' max_fails=%s' % backend['max_fails'];
                 servercfg.append('    server %s%s%s%s;' % (backend['server'],
-                            weight, fail_timeout, max_fails))
+                                                           weight, fail_timeout, max_fails))
         else:
             servercfg.append('    server %s;' % backends[0]['server'])
 
         servercfg.append('}')
-    
-    #print '\n'.join(servercfg)
+
+    # print '\n'.join(servercfg)
     configfile = os.path.join(SERVERCONF, '%s.conf' % server_names[0])
     configfile_exists = os.path.exists(configfile)
 
@@ -1580,13 +1621,15 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
             f.seek(-1, 2)
             if f.read(1) != '\n':
                 servercfg.insert(0, '')
-    with open(configfile, configfile_exists and 'a' or 'w') as f: f.write('\n'.join(servercfg))
+    with open(configfile, configfile_exists and 'a' or 'w') as f:
+        f.write('\n'.join(servercfg))
     return True
 
+
 def updateserver(old_ip, old_port, old_server_name,
-    server_names, listens, charset=None, index=None, locations=None,
-    limit_rate=None, limit_conn=None, ssl_crt=None, ssl_key=None,
-    rewrite_rules=None, version=None):
+                 server_names, listens, charset=None, index=None, locations=None,
+                 limit_rate=None, limit_conn=None, ssl_crt=None, ssl_key=None,
+                 rewrite_rules=None, version=None):
     """Update a existing server.
     
     If the old config is not in the right place, we would automatically delete it and
@@ -1611,15 +1654,15 @@ def updateserver(old_ip, old_port, old_server_name,
     if limit_conn:
         if _context_http_init_limit_conn(version=version):
             config = loadconfig(NGINXCONF, True)
-    
+
     # disable the old server and relative upstreams
     if not _context_commentserver(old_ip, old_port, old_server_name, config=config): return False
     if not _context_commentupstreams(old_server_name, config=config): return False
 
     # add the new server
     if not addserver(server_names, listens, charset=charset, index=index, locations=locations,
-        limit_rate=limit_rate, limit_conn=limit_conn, ssl_crt=ssl_crt, ssl_key=ssl_key,
-        rewrite_rules=rewrite_rules, conflict_check=False, version=version): return False
+                     limit_rate=limit_rate, limit_conn=limit_conn, ssl_crt=ssl_crt, ssl_key=ssl_key,
+                     rewrite_rules=rewrite_rules, conflict_check=False, version=version): return False
 
     # only delete the disabled server
     _context_deleteupstreams(old_server_name, disabled=True)
@@ -1630,79 +1673,80 @@ def updateserver(old_ip, old_port, old_server_name,
 
 if __name__ == '__main__':
     import pprint
+
     pp = pprint.PrettyPrinter(indent=4)
 
-    #_insert('/etc/nginx/nginx.conf', 31, ['gzip off'])
-    #_replace([('/etc/nginx/nginx.conf', 31, 1)], ['gzip on', 'gzip off'])
-    #http_set('gzip', 'off')
-    #http_set('limit_conn_zone', '$binary_remote_addr  zone=addr:10m')
-    #print http_get('limit_conn_zone')
-    #print http_getfirst('limit_conn_zone')
+    # _insert('/etc/nginx/nginx.conf', 31, ['gzip off'])
+    # _replace([('/etc/nginx/nginx.conf', 31, 1)], ['gzip on', 'gzip off'])
+    # http_set('gzip', 'off')
+    # http_set('limit_conn_zone', '$binary_remote_addr  zone=addr:10m')
+    # print http_get('limit_conn_zone')
+    # print http_getfirst('limit_conn_zone')
 
-    #pp.pprint(loadconfig(NGINXCONF, True))
-    #pp.pprint(getservers())
-    #pp.pprint(_context_getserver('0.0.0.0', '80', 'test.local'))
-    #pp.pprint(disableserver('0.0.0.0', '80', 'test.local'))
-    #pp.pprint(enableserver('0.0.0.0', '80', 'test.local'))
-    #pp.pprint(deleteserver('0.0.0.0', '80', 'youmeiyoua.com'))
+    # pp.pprint(loadconfig(NGINXCONF, True))
+    # pp.pprint(getservers())
+    # pp.pprint(_context_getserver('0.0.0.0', '80', 'test.local'))
+    # pp.pprint(disableserver('0.0.0.0', '80', 'test.local'))
+    # pp.pprint(enableserver('0.0.0.0', '80', 'test.local'))
+    # pp.pprint(deleteserver('0.0.0.0', '80', 'youmeiyoua.com'))
 
-    #print servername_exists('0.0.0.0', '80', 'www.paomi.local')
+    # print servername_exists('0.0.0.0', '80', 'www.paomi.local')
 
-    #print _context_server_clear_default_server('0.0.0.0', '8000')
-    
-    #pp.pprint(deleteserver('0.0.0.0', '8000', 'test.db.local'))
-    #pp.pprint(_context_getupstreams('test.db.local', disabled=True))
-    #pp.pprint(_context_deleteupstreams('test.db.local'))
-    #pp.pprint(_context_uncommentupstreams('test.db.local'))
-    #pp.pprint(_context_getupstreams('test.db.local'))
-    #pp.pprint(getserver('*', '80', 'www.baidu.com'))
-    #print _context_getserver('*', '80', '192.168.0.13')
+    # print _context_server_clear_default_server('0.0.0.0', '8000')
+
+    # pp.pprint(deleteserver('0.0.0.0', '8000', 'test.db.local'))
+    # pp.pprint(_context_getupstreams('test.db.local', disabled=True))
+    # pp.pprint(_context_deleteupstreams('test.db.local'))
+    # pp.pprint(_context_uncommentupstreams('test.db.local'))
+    # pp.pprint(_context_getupstreams('test.db.local'))
+    # pp.pprint(getserver('*', '80', 'www.baidu.com'))
+    # print _context_getserver('*', '80', '192.168.0.13')
 
     if 0:
         print addserver(
-            ['example.com', 'test.db.local'],
-            [{'port': '8000'}, {'port': '88'}],
-            charset='utf-8',
-            index='index.html index.htm index.php',
-            locations=None,
-            limit_rate='100k',
-            limit_conn='10',
-            rewrite_rules=['rewrite ^ https://www.example.com$document_uri permanent'])
+                ['example.com', 'test.db.local'],
+                [{'port': '8000'}, {'port': '88'}],
+                charset='utf-8',
+                index='index.html index.htm index.php',
+                locations=None,
+                limit_rate='100k',
+                limit_conn='10',
+                rewrite_rules=['rewrite ^ https://www.example.com$document_uri permanent'])
     if 0:
         print updateserver(
-            '', '8000', 'test.db.local',
-            ['test.db.local'],
-            [{'port': '8000', 'default_server': True}],
-            charset='utf-8',
-            index='index.html index.htm index.php',
-            locations=[
-                {
-                    'urlpath': '/',
-                    'root': '/var/www/example',
-                    'fastcgi_pass': '127.0.0.1:9000',
-                }, {
-                    'urlpath': '/phpinfo',
-                    'root': '/var/www/phpinfo',
-                    'fastcgi_pass': '127.0.0.1:9000',
-                }, {
-                    'urlpath': '/redirect',
-                    'redirect_url': 'http://www.baidu.com',
-                    'redirect_type': '301',
-                    'redirect_option': 'keep',
-                }, {
-                    'urlpath': '/proxy',
-                    'proxy_balance': 'weight',
-                    'proxy_protocol': 'http',
-                    'proxy_host': 'www.baidu.com',
-                    'proxy_realip': True,
-                    'proxy_backends': [
-                        {'server':'www.citydog.me'},
-                        {'server':'www.baidu.com'},
-                    ],
-                },{
-                    'urlpath': '/error',
-                    'error_code': '502',
-                }
-            ],
-            limit_rate='100',
-            limit_conn='10')
+                '', '8000', 'test.db.local',
+                ['test.db.local'],
+                [{'port': '8000', 'default_server': True}],
+                charset='utf-8',
+                index='index.html index.htm index.php',
+                locations=[
+                    {
+                        'urlpath': '/',
+                        'root': '/var/www/example',
+                        'fastcgi_pass': '127.0.0.1:9000',
+                    }, {
+                        'urlpath': '/phpinfo',
+                        'root': '/var/www/phpinfo',
+                        'fastcgi_pass': '127.0.0.1:9000',
+                    }, {
+                        'urlpath': '/redirect',
+                        'redirect_url': 'http://www.baidu.com',
+                        'redirect_type': '301',
+                        'redirect_option': 'keep',
+                    }, {
+                        'urlpath': '/proxy',
+                        'proxy_balance': 'weight',
+                        'proxy_protocol': 'http',
+                        'proxy_host': 'www.baidu.com',
+                        'proxy_realip': True,
+                        'proxy_backends': [
+                            {'server': 'www.citydog.me'},
+                            {'server': 'www.baidu.com'},
+                        ],
+                    }, {
+                        'urlpath': '/error',
+                        'error_code': '502',
+                    }
+                ],
+                limit_rate='100',
+                limit_conn='10')
