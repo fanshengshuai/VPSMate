@@ -87,6 +87,7 @@ var Auth = {
 		}, function(status){
 			if (status == 403) {
 				Message.setError('身份认证失败，请<a href="#/">重新登录</a>！');
+				window.location='/';
 			} else {
 				Message.setError('对不起，加载失败！（网络异常或服务器故障）');
 			}
