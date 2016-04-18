@@ -43,6 +43,9 @@ yum_reporpms = {
             'i386':   ('http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm', ),
             'i686':   ('http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm', ),
         },
+        7: {
+            'x86_64': ('http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm', ),
+        },
     },
     'CentALT': {
         5: {
@@ -97,6 +100,7 @@ enabled=1',
 # Alias of package we use when get versions of it
 yum_pkg_alias = {
     'nginx'         : ('nginx', 'nginx-stable', ),
+    'tomcat'         : ('tomcat', ),
     'apache'        : ('httpd', ),
     'vsftpd'        : ('vsftpd', ),
     'mysql'         : ('mysql-server', 'mysql55-server', ),
