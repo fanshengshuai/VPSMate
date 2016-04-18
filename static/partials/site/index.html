@@ -73,6 +73,10 @@
                                             ng-show="$index<server.engines.length-1">+</span></span></td>
                                 <td>
                                     <div class="btn-group">
+                                        <button class="btn btn-small" title="更新站点"
+                                                ng-click="site_refresh(server);">
+                                            <i class="icon-refresh"></i>
+                                        </button>
                                         <a class="btn btn-small"
                                            href="#/site/nginx/edit_{{server.listens[0].ip}}_{{server.listens[0].port}}_{{server.server_names[0]}}"
                                            title="设置">
