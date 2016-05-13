@@ -469,6 +469,7 @@ class QueryHandler(RequestHandler):
             'mongod'       : False,
             'php-fpm'      : False,
             'sendmail'     : False,
+            'postfix'     : False,
             'sshd'         : False,
             'iptables'     : False,
             'crond'        : False,
@@ -2458,7 +2459,7 @@ class BackendHandler(RequestHandler):
             if not dot_found:
                 with open('/etc/hosts', 'w') as f: f.writelines(lines)
 
-        cmd = '/etc/init.d/%s %s' % (service, action)
+        cmd = 'service %s %s' % (service, action)
         result, output = yield tornado.gen.Task(call_subprocess, self, cmd)
         if result == 0:
             code = 0
@@ -2620,6 +2621,8 @@ class BackendHandler(RequestHandler):
             for line in lines:
                 if not line: continue
                 repo = line.split()[0]
+		if repo.find('/'):
+		    repo = repo[0:repo.find('/')]
                 if repo in yum.yum_repolist:
                     data.append(repo)
         else:
@@ -2670,17 +2673,18 @@ class BackendHandler(RequestHandler):
             # CentALT and ius depends on epel
             for rpm in yum.yum_reporpms['epel'][dist_verint][arch]:
                 cmds.append('rpm -U %s' % rpm)
-
-            if repo in ('CentALT', 'ius'):
-                for rpm in yum.yum_reporpms[repo][dist_verint][arch]:
-                    cmds.append('rpm -U %s' % rpm)
+		
+            if dist_verint < 7:
+                if repo in ('CentALT', 'ius'):
+                    for rpm in yum.yum_reporpms[repo][dist_verint][arch]:
+                        cmds.append('rpm -U %s' % rpm)
         
         elif repo == '10gen':
             # REF: http://docs.mongodb.org/manual/tutorial/install-mongodb-on-redhat-centos-or-fedora-linux/
             with open('/etc/yum.repos.d/10gen.repo', 'w') as f:
                 f.write(yum.yum_repostr['10gen'][self.settings['arch']])
         
-        elif repo == 'atomic':
+        elif repo == 'atomic' and dist_verint < 7:
             # REF: http://www.atomicorp.com/channels/atomic/
             result, output = yield tornado.gen.Task(call_subprocess, self, yum.yum_repoinstallcmds['atomic'], shell=True)
             if result != 0: error = True
@@ -2745,6 +2749,7 @@ class BackendHandler(RequestHandler):
         data = []
         matched = False
         for cmd in cmds:
+            # print cmd
             result, output = yield tornado.gen.Task(call_subprocess, self, cmd)
             if result == 0:
                 matched = True
@@ -2757,6 +2762,8 @@ class BackendHandler(RequestHandler):
                         if len(fields) != 2: continue
                         field_name = fields[0].strip().lower().replace(' ', '_')
                         field_value = fields[1].strip()
+                        if field_value.find('/') > 0:
+                            field_value = field_value[0:field_value.find('/')]
                         if field_name == 'name': data.append({})
                         data[-1][field_name] = field_value
         
@@ -2809,7 +2816,7 @@ class BackendHandler(RequestHandler):
                 pkgs = ['%s.%s' % (p, self.settings['arch'])
                     for p, pinfo in yum.yum_pkg_relatives[pkg].iteritems() if pinfo['default']]
         repos = [repo, ]
-        if repo in ('CentALT', 'ius', 'atomic', '10gen'):
+        if repo in ('CentALT', 'ius', '10gen'):
             repos.extend(['base', 'updates', 'epel'])
         exclude_repos = [r for r in yum.yum_repolist if r not in repos]
 
