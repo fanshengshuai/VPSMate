@@ -36,7 +36,9 @@ class Install(object):
         self.installpath = '/usr/local/vpsmate'
         self.distname = self.dist[0].lower()
         self.version = self.dist[1]
+        self.version = self.version[0:self.version.find('.', self.version.index('.') + 1)]
         self.os = platform.system()
+        print 'Platform %s %s [%s]' % (self.dist[0], self.dist[1], self.os)
 
 
 
@@ -100,13 +102,20 @@ class Install(object):
                 epelurl = 'http://download.fedoraproject.org/pub/epel/5/%s/%s' % (self.arch, epelrpm)
                 # install fastestmirror plugin for yum
                 fastestmirror = 'http://mirror.centos.org/centos/5/os/%s/CentOS/yum-fastestmirror-1.1.16-21.el5.centos.noarch.rpm' % (self.arch, )
+                self._run('rpm -Uvh %s' % fastestmirror)
             elif int(float(self.version)) == 6:
                 epelrpm = 'epel-release-6-7.noarch.rpm'
                 epelurl = 'http://download.fedoraproject.org/pub/epel/6/%s/' % (self.arch, epelrpm)
                 fastestmirror = 'http://mirror.centos.org/centos/6/os/%s/Packages/yum-plugin-fastestmirror-1.1.30-14.el6.noarch.rpm' % (self.arch, )
+                self._run('rpm -Uvh %s' % fastestmirror)
+            elif int(float(self.version)) == 7:
+                epelrpm = 'epel-release-7-6.noarch.rpm'
+                epelurl = 'http://dl.fedoraproject.org/pub/epel/7/%s/e/%s' % (self.arch, epelrpm)
+                fastestmirror = 'http://mirror.centos.org/centos/7/os/%s/Packages/kabi-yum-plugins-1.0-3.el7.centos.noarch.rpm' % (self.arch, )
+                self._run('yum install -y wget net-tools vim psmisc rsync')
+
             self._run('wget -nv -c %s' % epelurl)
             self._run('rpm -Uvh %s' % epelrpm)
-            self._run('rpm -Uvh %s' % fastestmirror)
             self._run('yum -y install python26')
 
         if self.distname == 'centos':
@@ -191,8 +200,9 @@ class Install(object):
             print 'OK'
 
         # check python version
-        print '* Checking python version ...',
-        if sys.version_info[:2] == (2, 6):
+        print '* Current python version [%s.%s] ...' % (sys.version_info[:2][0],sys.version_info[:2][1]) ,
+	
+        if (sys.version_info[:2] == (2, 6) or sys.version_info[:2] == (2, 7)):
             print 'OK'
         else:
             print 'FAILED'
