@@ -678,11 +678,18 @@ class Service(object):
     def autostart_list(self):
         """Return a list of the autostart service name.
         """
+	startlevel = -1;
         with open('/etc/inittab') as f:
             for line in f:
                 if line.startswith('id:'):
                     startlevel = line.split(':')[1]
                     break
+
+	if startlevel == -1:
+		p = subprocess.Popen(shlex.split('runlevel'), stdout=subprocess.PIPE, close_fds=True)
+		startlevel = int(p.stdout.read().strip().replace('N ', ''))
+		p.wait()
+
         rcpath = '/etc/rc.d/rc%s.d/' % startlevel
         services = [
             os.path.basename(os.readlink(filepath))
