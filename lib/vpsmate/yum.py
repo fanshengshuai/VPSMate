@@ -30,6 +30,9 @@ yum_reporpms = {
             'x86_64': ('http://mirror.centos.org/centos/6/os/x86_64/Packages/centos-release-6-3.el6.centos.9.x86_64.rpm', ),
             'i386':   ('http://mirror.centos.org/centos/6/os/i386/Packages/centos-release-6-3.el6.centos.9.i686.rpm', ),
             'i686':   ('http://mirror.centos.org/centos/6/os/i386/Packages/centos-release-6-3.el6.centos.9.i686.rpm', ),
+        },
+        7: {
+            'x86_64': ('http://mirror.centos.org/centos/7/os/x86_64/Packages/centos-release-7-2.1511.el7.centos.2.10.x86_64.rpm', ),
         }
     },
     'epel': {
@@ -44,7 +47,7 @@ yum_reporpms = {
             'i686':   ('http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm', ),
         },
         7: {
-            'x86_64': ('http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm', ),
+            'x86_64': ('http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-6.noarch.rpm', ),
         },
     },
     'CentALT': {
