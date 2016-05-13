@@ -54,7 +54,7 @@ class Application(tornado.web.Application):
         dist = si.Server.dist()
         settings['dist_name'] = dist['name'].lower()
         settings['dist_version'] = dist['version']
-        settings['dist_verint'] = int(float(dist['version']))
+        settings['dist_verint'] = int(dist['version'][0:dist['version'].find('.')])
         uname = si.Server.uname()
         settings['arch'] = uname['machine']
         if settings['arch'] == 'i686' and settings['dist_verint'] == 5: settings['arch'] = 'i386'
