@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -9,9 +9,9 @@
 """Package for php operations.
 """
 
+import glob
 import shlex
 import subprocess
-import glob
 
 PHPCFG = '/etc/php.ini'
 PHPFPMCFG = '/etc/php-fpm.conf'
@@ -22,24 +22,25 @@ def phpinfo():
     """
     cmd = 'php-cgi -i'
     p = subprocess.Popen(shlex.split(cmd),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, close_fds=True)
     info = p.stdout.read()
     p.stderr.read()
     p.wait()
 
     # Remove headers like
-    #X-Powered-By: PHP/5.3.16
-    #Content-type: text/html
+    # X-Powered-By: PHP/5.3.16
+    # Content-type: text/html
     info = info[info.find('<!DOCTYPE'):]
     return info
+
 
 def loadconfig(initype='php', inifile=None, detail=False):
     """Read the php.ini or php-fpm.ini.
 
     initype can be 'php' or 'php-fpm'.
     """
-    if not inifile: inifile = initype=='php' and PHPCFG or PHPFPMCFG
+    if not inifile: inifile = initype == 'php' and PHPCFG or PHPFPMCFG
 
     settings = {}
     with open(inifile) as f:
@@ -49,7 +50,7 @@ def loadconfig(initype='php', inifile=None, detail=False):
 
             # detect if it is a section
             if line.startswith('['): continue
-            
+
             # detect if it's commented
             if line.startswith(';'):
                 line = line.strip(';')
@@ -57,7 +58,7 @@ def loadconfig(initype='php', inifile=None, detail=False):
                 if not detail: continue
             else:
                 commented = False
-            
+
             fs = line.split('=', 1)
             if len(fs) != 2: continue
 
@@ -68,7 +69,7 @@ def loadconfig(initype='php', inifile=None, detail=False):
                     settings.update(loadconfig(initype, incfile, detail))
             else:
                 if settings.has_key(item):
-                    if detail: count = settings[item]['count']+1
+                    if detail: count = settings[item]['count'] + 1
                     if not commented:
                         settings[item] = detail and {
                             'file': inifile,
@@ -85,8 +86,9 @@ def loadconfig(initype='php', inifile=None, detail=False):
                         'commented': commented,
                     } or value
                 if detail: settings[item]['count'] = count
-            
+
     return settings
+
 
 def ini_get(item, detail=False, config=None, initype='php'):
     """Get value of an ini item.
@@ -97,16 +99,17 @@ def ini_get(item, detail=False, config=None, initype='php'):
     else:
         return None
 
+
 def ini_set(item, value, commented=False, config=None, initype='php'):
     """Set value of an ini item.
     """
-    inifile = initype=='php' and PHPCFG or PHPFPMCFG
+    inifile = initype == 'php' and PHPCFG or PHPFPMCFG
     v = ini_get(item, detail=True, config=config, initype=initype)
 
     if v:
         # detect if value change
         if v['commented'] == commented and v['value'] == value: return True
-        
+
         # empty value should be commented
         if value == '': commented = True
 
@@ -136,26 +139,27 @@ def ini_set(item, value, commented=False, config=None, initype='php'):
                             lines.append('%s = %s\n' % (item, value))
                 else:
                     lines.append(line)
-        with open(v['file'], 'w') as f: f.write(''.join(lines))
+        with open(v['file'], 'w') as f:
+            f.write(''.join(lines))
     else:
         # append to the end of file
         with open(inifile, 'a') as f:
             f.write('\n%s%s = %s\n' % (commented and ';' or '', item, value))
-    
+
     return True
 
 
 if __name__ == '__main__':
     import pprint
+
     pp = pprint.PrettyPrinter(indent=4)
-    
-    #pp.pprint(loadconfig())
-    #print ini_get('short_open_tag', detail=True)
-    #print ini_set('short_open_tag', 'On', commented=False)
-    #print ini_get('date.timezone', detail=True)
-    #print ini_set('date.timezone', '', commented=False)
-    
-    #pp.pprint(loadconfig('php-fpm'))
-    #print ini_get('pm', detail=False, initype='php-fpm')
-    #print ini_set('pm', 'static', initype='php-fpm')
-    
+
+    # pp.pprint(loadconfig())
+    # print ini_get('short_open_tag', detail=True)
+    # print ini_set('short_open_tag', 'On', commented=False)
+    # print ini_get('date.timezone', detail=True)
+    # print ini_set('date.timezone', '', commented=False)
+
+    # pp.pprint(loadconfig('php-fpm'))
+    # print ini_get('pm', detail=False, initype='php-fpm')
+    # print ini_set('pm', 'static', initype='php-fpm')

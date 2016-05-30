@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -9,10 +9,10 @@
 
 import os
 import sys
+
 root_path = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(root_path, 'lib'))
 
-import ssl
 import tornado.ioloop
 import tornado.httpserver
 import vpsmate.web
@@ -26,6 +26,7 @@ def write_pid():
     pidfp.write(str(os.getpid()))
     pidfp.close()
 
+
 def main():
     # settings of tornado application
     settings = {
@@ -35,7 +36,7 @@ def main():
         'xsrf_cookies': True,
         'cookie_secret': make_cookie_secret(),
     }
-    
+
     application = vpsmate.web.Application([
         (r'/xsrf', vpsmate.web.XsrfHandler),
         (r'/authstatus', vpsmate.web.AuthStatusHandler),
@@ -51,9 +52,9 @@ def main():
         (r'/sitepackage/(.+)', vpsmate.web.SitePackageHandler),
         (r'/client/(.+)', vpsmate.web.ClientHandler),
         (r'/((?:css|js|js.min|lib|partials|images|favicon\.ico|robots\.txt)(?:\/.*)?)',
-            vpsmate.web.StaticFileHandler, {'path': settings['static_path']}),
+         vpsmate.web.StaticFileHandler, {'path': settings['static_path']}),
         (r'/($)', vpsmate.web.StaticFileHandler,
-            {'path': settings['static_path'] + '/index.html'}),
+         {'path': settings['static_path'] + '/index.html'}),
         (r'/file/(.+)', vpsmate.web.FileDownloadHandler, {'path': '/'}),
         (r'/fileupload', vpsmate.web.FileUploadHandler),
         (r'/version', vpsmate.web.VersionHandler),
@@ -69,6 +70,7 @@ def main():
     server.listen(server_port, address=server_ip)
     write_pid()
     tornado.ioloop.IOLoop.instance().start()
+
 
 if __name__ == "__main__":
     main()

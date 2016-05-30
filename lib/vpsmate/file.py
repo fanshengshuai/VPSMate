@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -10,8 +10,10 @@
 """
 
 import os
+
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
@@ -28,7 +30,6 @@ from uuid import uuid4
 from utils import b2h, ftime
 from si import Server
 
-
 charsets = ('utf-8', 'gb2312', 'gbk', 'gb18030', 'big5', 'euc-jp', 'euc-kr', 'iso-8859-2', 'shift_jis')
 
 
@@ -42,15 +43,16 @@ def listdir(path, showdotfiles=False, onlydir=None):
         items[i] = getitem(os.path.join(path, item))
     # let folders list before files
     rt = []
-    for i in xrange(len(items)-1, -1, -1):
+    for i in xrange(len(items) - 1, -1, -1):
         if items[i]['isdir'] \
-            or items[i]['islnk'] \
-                and not items[i]['link_broken'] \
-                and items[i]['link_isdir']:
+                or items[i]['islnk'] \
+                        and not items[i]['link_broken'] \
+                        and items[i]['link_isdir']:
             rt.insert(0, items.pop(i))
     # check if only list directories
     if not onlydir: rt.extend(items)
     return rt
+
 
 def getitem(path):
     if not os.path.exists(path) and not os.path.islink(path): return False
@@ -69,12 +71,12 @@ def getitem(path):
     item = {
         'name': name,
         'isdir': S_ISDIR(mode),
-        #'ischr': S_ISCHR(mode),
-        #'isblk': S_ISBLK(mode),
+        # 'ischr': S_ISCHR(mode),
+        # 'isblk': S_ISBLK(mode),
         'isreg': S_ISREG(mode),
-        #'isfifo': S_ISFIFO(mode),
+        # 'isfifo': S_ISFIFO(mode),
         'islnk': S_ISLNK(mode),
-        #'issock': S_ISSOCK(mode),
+        # 'issock': S_ISSOCK(mode),
         'perms': oct(stat.st_mode & 0777),
         'uid': stat.st_uid,
         'gid': stat.st_gid,
@@ -99,6 +101,7 @@ def getitem(path):
             item['link_broken'] = True
     return item
 
+
 def rename(oldpath, newname):
     path = os.path.abspath(oldpath)
     if not os.path.exists(oldpath): return False
@@ -110,12 +113,14 @@ def rename(oldpath, newname):
     except:
         return False
 
+
 def link(srcpath, despath):
     try:
         os.symlink(srcpath, despath)
         return True
     except:
         return False
+
 
 def dadd(path, name):
     path = os.path.abspath(path)
@@ -128,13 +133,15 @@ def dadd(path, name):
     except:
         return False
 
+
 def istext(path):
     if not os.path.exists('/usr/file') and not os.path.exists('/usr/bin/file'):
         return True
     return (re.search(r':(.* text|.* empty)',
-            subprocess.Popen(["file", '-L', path], 
-                            stdout=subprocess.PIPE).stdout.read())
+                      subprocess.Popen(["file", '-L', path],
+                                       stdout=subprocess.PIPE).stdout.read())
             is not None)
+
 
 def mimetype(filepath):
     if not os.path.exists(filepath): return False
@@ -151,12 +158,14 @@ def mimetype(filepath):
     if ';' in mime: mime = mime.split(';', 1)[0]
     if mime == 'text/plain':
         tmime = mimetypes.guess_type(filepath)[0]
-        if tmime: mime = tmime 
+        if tmime: mime = tmime
     return mime
+
 
 def fsize(filepath):
     if not os.path.exists(filepath): return None
     return os.lstat(filepath).st_size
+
 
 def fadd(path, name):
     path = os.path.abspath(path)
@@ -164,10 +173,12 @@ def fadd(path, name):
     fpath = os.path.join(path, name)
     if os.path.exists(fpath): return False
     try:
-        with open(fpath, 'w'): pass
+        with open(fpath, 'w'):
+            pass
         return True
     except:
         return False
+
 
 def fsave(path, content, bakup=True):
     if not os.path.exists(path): return False
@@ -176,10 +187,12 @@ def fsave(path, content, bakup=True):
             dirname = os.path.dirname(path)
             filename = '.%s.bak' % os.path.basename(path)
             os.rename(path, os.path.join(dirname, filename))
-        with open(path, 'w') as f: f.write(content)
+        with open(path, 'w') as f:
+            f.write(content)
         return True
     except:
         return False
+
 
 def decode(content):
     """Detect charset of content and decode it.
@@ -192,6 +205,7 @@ def decode(content):
             pass
     return (None, content)
 
+
 def encode(content, charset):
     """Encode content using specified charset.
     """
@@ -199,6 +213,7 @@ def encode(content, charset):
         return content.encode(charset)
     except:
         return False
+
 
 def delete(path):
     if not os.path.exists(path) and not os.path.islink(path): return False
@@ -227,12 +242,14 @@ def delete(path):
     except:
         return False
 
+
 def _getmounts():
     mounts = Server.mounts()
     mounts = [mount['path'] for mount in mounts]
     # let the longest path at the first
-    mounts.sort(lambda x,y: cmp(len(y),len(x)))
+    mounts.sort(lambda x, y: cmp(len(y), len(x)))
     return mounts
+
 
 def _inittrash(mounts=None):
     # initialize the trash
@@ -244,11 +261,13 @@ def _inittrash(mounts=None):
             metafile = os.path.join(trashpath, '.fileinfo')
             anydbm.open(metafile, 'c').close()
 
+
 def trashs():
     """Return trash path list.
     """
     mounts = _getmounts()
     return [os.path.join(mount, '.deleted_files') for mount in mounts]
+
 
 def tlist():
     mounts = _getmounts()
@@ -274,11 +293,12 @@ def tlist():
                 item['islnk'] = S_ISLNK(stat.st_mode)
             items.append(item)
         db.close()
-    items.sort(lambda x,y: cmp(y['time'], x['time']))
+    items.sort(lambda x, y: cmp(y['time'], x['time']))
     return items
 
+
 def titem(mount, uuid):
-    #_inittrash()
+    # _inittrash()
     try:
         trashpath = os.path.join(mount, '.deleted_files')
         db = anydbm.open(os.path.join(trashpath, '.fileinfo'), 'c')
@@ -297,8 +317,9 @@ def titem(mount, uuid):
     except:
         return False
 
+
 def trestore(mount, uuid):
-    #_inittrash()
+    # _inittrash()
     try:
         info = titem(mount, uuid)
         trashpath = os.path.join(mount, '.deleted_files')
@@ -310,9 +331,10 @@ def trestore(mount, uuid):
     except:
         return False
 
+
 def tdelete(mount, uuid):
     # the real file or directory should be deleted external
-    #_inittrash()
+    # _inittrash()
     try:
         db = anydbm.open(os.path.join(mount, '.deleted_files', '.fileinfo'), 'c')
         del db[uuid]
@@ -320,6 +342,7 @@ def tdelete(mount, uuid):
         return True
     except:
         return False
+
 
 def chown(path, user, group, recursively=False):
     if not os.path.exists(path) and not os.path.islink(path):
@@ -342,6 +365,7 @@ def chown(path, user, group, recursively=False):
     except:
         return False
     return True
+
 
 def chmod(path, perms, recursively=False):
     if not os.path.exists(path) and not os.path.islink(path):
@@ -379,5 +403,5 @@ if __name__ == '__main__':
         print '  ctime: %s' % item['ctime']
         print '  istext: %s' % str(istext(os.path.join('/root', item['name'])))
         print '  mimetype: %s' % mimetype(os.path.join('/root', item['name']))
-        print 
-    print 
+        print
+    print

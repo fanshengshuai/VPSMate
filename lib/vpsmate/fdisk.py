@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -10,8 +10,10 @@
 """
 
 import os
+
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
@@ -43,7 +45,7 @@ def add(disk, size=''):
     if i == 1:
         if child.isalive(): child.wait()
         return False
-    
+
     rt = True
     partno_found = False
     partno = 1
@@ -60,7 +62,7 @@ def add(disk, size=''):
         if i == 0: partno_found = True
         partno += 1
         if partno > 4: break
-    
+
     if not partno_found: rt = False
 
     if rt:
@@ -71,7 +73,7 @@ def add(disk, size=''):
         if i == 1:
             child.sendline('')
             child.expect('(m for help)')
-        elif i == 2:    # wrong size input
+        elif i == 2:  # wrong size input
             child.sendline('')
             child.expect('(m for help)')
             rt = False
@@ -110,16 +112,16 @@ def delete(partition):
 
     rt = True
     i = child.expect([
-            'Partition number',
-            'Selected partition %s' % partno,
-            'No partition is defined yet',
-            pexpect.TIMEOUT
-        ], timeout=1)
+        'Partition number',
+        'Selected partition %s' % partno,
+        'No partition is defined yet',
+        pexpect.TIMEOUT
+    ], timeout=1)
     if i == 0:
         child.sendline(partno)
     elif i == 2 or i == 3:
         rt = False
-    
+
     if rt:
         i = child.expect(['(m for help)', 'has empty type'])
         if i == 0:
@@ -154,27 +156,27 @@ def scan(disk, size=''):
 
     child.sendline('w')
     i = child.expect([
-            'The kernel still uses the old table',
-            pexpect.TIMEOUT,
-            pexpect.EOF
-        ], timeout=1)
+        'The kernel still uses the old table',
+        pexpect.TIMEOUT,
+        pexpect.EOF
+    ], timeout=1)
     if i == 0:
         rt = False
     else:
         rt = True
-        
+
     if child.isalive(): child.wait()
     return rt
 
 
 if __name__ == '__main__':
-# !!!!!!!!!!! DANGEROUS TESTING !!!!!!!!!!!
-#    print '* Add partition to sdb with 5G:',
-#    print add('/dev/sdb', '5G')
-    
-#    print '* Delete partition /dev/sdb1:',
-#    print delete('/dev/sdb1')
+    # !!!!!!!!!!! DANGEROUS TESTING !!!!!!!!!!!
+    #    print '* Add partition to sdb with 5G:',
+    #    print add('/dev/sdb', '5G')
+
+    #    print '* Delete partition /dev/sdb1:',
+    #    print delete('/dev/sdb1')
 
     print '* Rescan partitions of /dev/sdb:',
     print scan('/dev/sdb')
-    print 
+    print

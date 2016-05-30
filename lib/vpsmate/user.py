@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -10,18 +10,18 @@
 """
 
 import os
+
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
 import pexpect
 import shlex
-import time
 import pwd
 import grp
 import subprocess
-from utils import b2h, ftime
 
 
 def listuser(fullinfo=True):
@@ -82,11 +82,11 @@ def useradd(username, options):
         cmd.append('-M')
     cmd.append(username)
     p = subprocess.Popen(cmd,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     if p.wait() != 0: return False
-    
+
     # check if need to lock/unlock the new account
     if options.has_key('lock') and options['lock']:
         if not usermod(username, {'lock': options['lock']}): return False
@@ -94,7 +94,7 @@ def useradd(username, options):
     # check if need to set passwd
     if options.has_key('pw_passwd'):
         if not passwd(username, options['pw_passwd']): return False
-    
+
     return True
 
 
@@ -117,7 +117,7 @@ def usermod(username, options):
     cmd.append(username)
     if len(cmd) > 2:
         p = subprocess.Popen(cmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         p.stdout.read()
         msg = p.stderr.read()
         if p.wait() != 0:
@@ -129,11 +129,11 @@ def usermod(username, options):
         if not passwd(username, options['pw_passwd']): return False
 
     return True
-        
+
 
 def userdel(username):
     p = subprocess.Popen(['userdel', username],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     return p.wait() == 0
@@ -144,8 +144,8 @@ def listgroup(fullinfo=True):
         groups = grp.getgrall()
         for i, group in enumerate(groups):
             groups[i] = dict((name, getattr(group, name))
-                            for name in dir(group)
-                            if not name.startswith('__'))
+                             for name in dir(group)
+                             if not name.startswith('__'))
     else:
         groups = [gr.gr_name for gr in grp.getgrall()]
     return groups
@@ -153,7 +153,7 @@ def listgroup(fullinfo=True):
 
 def groupadd(groupname):
     p = subprocess.Popen(['groupadd', groupname],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     return p.wait() == 0
@@ -161,7 +161,7 @@ def groupadd(groupname):
 
 def groupmod(groupname, newgroupname):
     p = subprocess.Popen(['groupmod', '-n', newgroupname, groupname],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     return p.wait() == 0
@@ -169,7 +169,7 @@ def groupmod(groupname, newgroupname):
 
 def groupdel(groupname):
     p = subprocess.Popen(['groupdel', groupname],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     return p.wait() == 0
@@ -182,7 +182,7 @@ def groupmems(groupname, option, mem):
     elif option == 'del':
         cmd.extend(['-d', mem])
     p = subprocess.Popen(cmd,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
     p.stdout.read()
     p.stderr.read()
     return p.wait() == 0

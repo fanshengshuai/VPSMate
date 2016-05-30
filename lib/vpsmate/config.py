@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -10,18 +10,19 @@ import os
 
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
 from filelock import FileLock
 from ConfigParser import ConfigParser
 
+
 class Config(object):
-    
     def __init__(self, inifile='data/config.ini'):
         self.inifile = inifile
         self.cfg = ConfigParser()
-        
+
         with FileLock(self.inifile):
             if os.path.exists(inifile):
                 self.cfg.read(inifile)
@@ -36,9 +37,9 @@ class Config(object):
                 },
                 'auth': {
                     'username': 'admin',
-                    'password': '',     # empty password never validated
+                    'password': '',  # empty password never validated
                     'passwordcheck': 'on',
-                    'accesskey': '',    # empty access key never validated
+                    'accesskey': '',  # empty access key never validated
                     'accesskeyenable': 'off',
                 },
                 'runtime': {
@@ -61,15 +62,15 @@ class Config(object):
                     if not self.cfg.has_option(sec, opt):
                         self.cfg.set(sec, opt, val)
                         needupdate = True
-            
+
             # update ini file
             if needupdate: self.update(False)
-    
+
     def update(self, lock=True):
         if lock:
             flock = FileLock(self.inifile)
             flock.acquire()
-        
+
         try:
             inifp = open(self.inifile, 'w')
             self.cfg.write(inifp)
@@ -79,25 +80,25 @@ class Config(object):
         except:
             if lock: flock.release()
             return False
-    
+
     def has_option(self, section, option):
         return self.cfg.has_option(section, option)
-    
+
     def get(self, section, option):
         return self.cfg.get(section, option)
-    
+
     def getboolean(self, section, option):
         return self.cfg.getboolean(section, option)
-    
+
     def getint(self, section, option):
         return self.cfg.getint(section, option)
-    
+
     def has_section(self, section):
         return self.cfg.has_section(section)
-    
+
     def add_section(self, section):
         return self.cfg.add_section(section)
-    
+
     def remove_option(self, section):
         return self.cfg.remove_option(section)
 

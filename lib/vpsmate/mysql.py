@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -13,6 +13,7 @@ import os
 
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
@@ -42,6 +43,7 @@ def updatepwd(pwd, oldpwd):
     if child.isalive(): return child.wait() == 0
     return i != 0
 
+
 def shutdown(pwd):
     """Shutdown mysql server.
     """
@@ -61,6 +63,7 @@ def shutdown(pwd):
     if child.isalive(): return child.wait() == 0
     return i != 0
 
+
 def _mysql(pwd):
     """Open a mysql client and auth login.
     """
@@ -68,6 +71,7 @@ def _mysql(pwd):
     child = pexpect.spawn(cmd[0], cmd[1:])
     if not _auth(child, pwd): return False
     return child
+
 
 def _auth(child, pwd):
     """Auth a mysql client login.
@@ -84,12 +88,14 @@ def _auth(child, pwd):
         return False
     return True
 
+
 def _exit(child):
     """Exit a mysql client.
     """
     child.sendline('exit')
     child.expect([pexpect.EOF])
     if child.isalive(): child.wait()
+
 
 def _parse_result(output, includefields=True):
     """Parse result into a list.
@@ -113,6 +119,7 @@ def _parse_result(output, includefields=True):
             return rows
     return True
 
+
 def _sql(child, sql, returnresult=True, includefields=True):
     """Execute SQL statement in interactive mode.
     """
@@ -124,7 +131,7 @@ def _sql(child, sql, returnresult=True, includefields=True):
 
     child.sendline(sql)
     i = child.expect(['ERROR', 'mysql>', pexpect.EOF])
-    if i == 0: 
+    if i == 0:
         # skip old lines
         i = child.expect(['mysql>', pexpect.EOF])
         if i != 0: _exit(child)
@@ -138,11 +145,13 @@ def _sql(child, sql, returnresult=True, includefields=True):
     else:
         return True
 
+
 def _escape(string):
     """Escape a string.
     """
     return re.escape(string).replace('\_', '_').replace('\%', '%')
-    
+
+
 def fupdatepwd(pwd):
     """Force update password of root.
 
@@ -153,9 +162,10 @@ def fupdatepwd(pwd):
     if i == 1:
         if child.isalive(): child.wait()
         return False
-    
+
     try:
-        if not _sql(child, 'UPDATE mysql.user SET Password=PASSWORD("%s") WHERE User="root"' % _escape(pwd)): raise Exception()
+        if not _sql(child,
+                    'UPDATE mysql.user SET Password=PASSWORD("%s") WHERE User="root"' % _escape(pwd)): raise Exception()
         if not _sql(child, 'FLUSH PRIVILEGES'): raise Exception()
     except:
         _exit(child)
@@ -165,6 +175,7 @@ def fupdatepwd(pwd):
 
     return True
 
+
 def checkpwd(pwd):
     """Validate password of root.
     """
@@ -173,6 +184,7 @@ def checkpwd(pwd):
     _exit(child)
     return True
 
+
 def show_databases(pwd, fullinfo=True):
     """Show database list.
     """
@@ -180,7 +192,7 @@ def show_databases(pwd, fullinfo=True):
     if not child: return False
 
     ignore_tables = ('information_schema', 'performance_schema', 'mysql')
-    
+
     if not fullinfo:
         dbs = _sql(child, 'SHOW DATABASES', includefields=False)
         if not dbs:
@@ -213,12 +225,13 @@ FROM (
     _exit(child)
     return dbs
 
+
 def show_database(pwd, dbname):
     """Show a database info.
     """
     child = _mysql(pwd)
     if not child: return False
-    
+
     sql = '''
 SELECT schema_name name, charset, collation,
 IFNULL(tables, 0) tables,
@@ -244,6 +257,7 @@ FROM (
     _exit(child)
     return dbinfo
 
+
 def create_database(pwd, dbname, charset='utf8', collation='utf8_general_ci'):
     """Create a new database.
     """
@@ -256,6 +270,7 @@ def create_database(pwd, dbname, charset='utf8', collation='utf8_general_ci'):
         return False
     _exit(child)
     return True
+
 
 def alter_database(pwd, dbname, charset='utf8', collation='utf8_general_ci'):
     """Alter database.
@@ -270,12 +285,13 @@ def alter_database(pwd, dbname, charset='utf8', collation='utf8_general_ci'):
     _exit(child)
     return True
 
+
 def rename_database(pwd, dbname, newname):
     """Rename a database.
     """
-    child =  _mysql(pwd)
+    child = _mysql(pwd)
     if not child: return False
-    
+
     try:
         create_sql = _sql(child, 'SHOW CREATE DATABASE %s' % _escape(dbname), includefields=False)
         if not create_sql: raise Exception()
@@ -283,7 +299,7 @@ def rename_database(pwd, dbname, newname):
         if not _sql(child, 'USE %s' % _escape(dbname)): raise Exception()
         tables = _sql(child, 'SHOW TABLES', includefields=False)
         if tables == False: raise Exception()
-        
+
         if not _sql(child, create_sql.replace(dbname, newname)): raise Exception()
         for table in tables:
             table = table[0]
@@ -297,6 +313,7 @@ def rename_database(pwd, dbname, newname):
         _exit(child)
     return True
 
+
 def drop_database(pwd, dbname):
     """Drop a database.
     """
@@ -308,13 +325,14 @@ def drop_database(pwd, dbname):
     _exit(child)
     return True
 
+
 def export_database(pwd, dbname, exportpath):
     """Export database to a file.
     """
     filename = '%s_%s.sql' % (dbname, time.strftime('%Y%m%d_%H%M%S'))
     filepath = os.path.join(exportpath, filename)
     if not utils.valid_filename(filename): return False
-    
+
     cmd = 'mysqldump -uroot -p %s' % dbname
     cmd = '/bin/bash -c "%s > %s"' % (cmd, filepath)
     child = pexpect.spawn(cmd)
@@ -331,6 +349,7 @@ def export_database(pwd, dbname, exportpath):
         return w == 0
 
     return i != 0
+
 
 def show_users(pwd, dbname=None):
     """Show all user list, or user list of specified database.
@@ -366,6 +385,7 @@ FROM `mysql`.`user` WHERE NOT (
     _exit(child)
     return privs
 
+
 def show_user_globalprivs(pwd, user, host):
     """Show user global privileges.
     """
@@ -379,6 +399,7 @@ def show_user_globalprivs(pwd, user, host):
     _exit(child)
     return privs
 
+
 def show_user_dbprivs(pwd, user, host, dbname=None):
     """Show user privileges in database.
     """
@@ -386,9 +407,11 @@ def show_user_dbprivs(pwd, user, host, dbname=None):
     if not child: return False
 
     if not dbname:
-        sql = "SELECT * FROM `mysql`.`db` WHERE `User` = '%s' AND `Host` = '%s' ORDER BY `Db` ASC" % (_escape(user), _escape(host))
+        sql = "SELECT * FROM `mysql`.`db` WHERE `User` = '%s' AND `Host` = '%s' ORDER BY `Db` ASC" % (
+        _escape(user), _escape(host))
     else:
-        sql = "SELECT * FROM `mysql`.`db` WHERE `User` = '%s' AND `Host` = '%s' AND '%s' LIKE `Db`" % (_escape(user), _escape(host), _escape(dbname))
+        sql = "SELECT * FROM `mysql`.`db` WHERE `User` = '%s' AND `Host` = '%s' AND '%s' LIKE `Db`" % (
+        _escape(user), _escape(host), _escape(dbname))
 
     privs = _sql(child, sql)
     if privs and dbname: privs = privs[0]
@@ -396,12 +419,13 @@ def show_user_dbprivs(pwd, user, host, dbname=None):
     _exit(child)
     return privs
 
+
 def revoke_user_privs(pwd, user, host, dbname=None):
     """Revoke user's privileges.
     """
-    child =  _mysql(pwd)
+    child = _mysql(pwd)
     if not child: return False
-    
+
     if not dbname:
         dbexpr = '*.*'
     else:
@@ -426,12 +450,13 @@ def revoke_user_privs(pwd, user, host, dbname=None):
         _exit(child)
     return True
 
+
 def update_user_privs(pwd, user, host, privs, dbname=None):
     """Update user's privileges.
     """
-    child =  _mysql(pwd)
+    child = _mysql(pwd)
     if not child: return False
-    
+
     allprivs = [
         'SELECT', 'INSERT', 'UPDATE', 'DELETE',
         'CREATE', 'ALTER', 'INDEX', 'DROP', 'CREATE TEMPORARY TABLES',
@@ -439,7 +464,7 @@ def update_user_privs(pwd, user, host, privs, dbname=None):
         'CREATE VIEW', 'EVENT', 'TRIGGER',
         'GRANT', 'LOCK TABLES', 'REFERENCES'
     ]
-    
+
     if not dbname:
         allprivs.extend([
             'FILE', 'SUPER', 'PROCESS', 'RELOAD', 'SHUTDOWN', 'SHOW DATABASES',
@@ -450,7 +475,7 @@ def update_user_privs(pwd, user, host, privs, dbname=None):
         dbexpr = '`%s`.*' % _escape(dbname)
 
     privs = filter(lambda a: a in allprivs, privs)
-    
+
     # revoke privileges
     if len(privs) == 0:
         _exit(child)
@@ -461,10 +486,11 @@ def update_user_privs(pwd, user, host, privs, dbname=None):
         privs = filter(lambda a: a != 'GRANT', privs)
     else:
         grant_option = ''
-    if len(privs) == len(allprivs)-1:
+    if len(privs) == len(allprivs) - 1:
         grant_sql = "GRANT ALL PRIVILEGES ON %s TO '%s'@'%s' %s" % (dbexpr, _escape(user), _escape(host), grant_option)
     else:
-        grant_sql = "GRANT %s ON %s TO '%s'@'%s' %s" % (','.join(privs), dbexpr, _escape(user), _escape(host), grant_option)
+        grant_sql = "GRANT %s ON %s TO '%s'@'%s' %s" % (
+        ','.join(privs), dbexpr, _escape(user), _escape(host), grant_option)
 
     try:
         # don't check revoke result, the user may not exists
@@ -480,10 +506,11 @@ def update_user_privs(pwd, user, host, privs, dbname=None):
         _exit(child)
     return True
 
+
 def create_user(pwd, user, host, password=None):
     """Create a user.
     """
-    child =  _mysql(pwd)
+    child = _mysql(pwd)
     if not child: return False
 
     if password:
@@ -495,6 +522,7 @@ def create_user(pwd, user, host, password=None):
     _exit(child)
     return rs
 
+
 def drop_user(pwd, user, host):
     """Drop a user.
     """
@@ -505,6 +533,7 @@ def drop_user(pwd, user, host):
 
     _exit(child)
     return rs
+
 
 def set_user_password(pwd, user, host, password=None):
     """Set password for user.
@@ -524,22 +553,23 @@ def set_user_password(pwd, user, host, password=None):
 
 if __name__ == '__main__':
     import pprint
+
     pp = pprint.PrettyPrinter(indent=4)
-    
-    #pp.pprint(checkpwd('admin'))
-    #pp.pprint(show_databases('admin'))
-    #pp.pprint(show_database('admin', 'abcd'))
-    #pp.pprint(create_database('admin', 'abcd'))
-    #pp.pprint(alter_database('admin', 'abcd', 'latin1', 'latin1_swedish_ci'))
-    #pp.pprint(drop_database('admin', 'abcd'))
-    #pp.pprint(rename_database('admin', 'abcd', 'test'))
-    #pp.pprint(export_database('admin', 'abcd', '/root'));
-    #pp.pprint(show_users('admin', 'abcd'))
-    #pp.pprint(show_users('admin'))
-    #pp.pprint(show_user_globalprivs('admin', 'ddyh', 'localhost'))
-    #pp.pprint(show_user_dbprivs('admin', 'ddyh', 'localhost'))
-    #pp.pprint(revoke_user_privs('admin', 'ddyh', 'localhost', 'abcd'))
-    #pp.pprint(update_user_privs('admin', 'hilyjiang', 'localhost', ['SELECT']))
-    #pp.pprint(create_user('admin', 'hilyjiang', '%'))
-    #pp.pprint(drop_user('admin', 'hilyjiang', 'localhost'))
-    #pp.pprint(set_user_password('admin', 'ddyh', 'localhost', 'ddyh'))
+
+    # pp.pprint(checkpwd('admin'))
+    # pp.pprint(show_databases('admin'))
+    # pp.pprint(show_database('admin', 'abcd'))
+    # pp.pprint(create_database('admin', 'abcd'))
+    # pp.pprint(alter_database('admin', 'abcd', 'latin1', 'latin1_swedish_ci'))
+    # pp.pprint(drop_database('admin', 'abcd'))
+    # pp.pprint(rename_database('admin', 'abcd', 'test'))
+    # pp.pprint(export_database('admin', 'abcd', '/root'));
+    # pp.pprint(show_users('admin', 'abcd'))
+    # pp.pprint(show_users('admin'))
+    # pp.pprint(show_user_globalprivs('admin', 'ddyh', 'localhost'))
+    # pp.pprint(show_user_dbprivs('admin', 'ddyh', 'localhost'))
+    # pp.pprint(revoke_user_privs('admin', 'ddyh', 'localhost', 'abcd'))
+    # pp.pprint(update_user_privs('admin', 'hilyjiang', 'localhost', ['SELECT']))
+    # pp.pprint(create_user('admin', 'hilyjiang', '%'))
+    # pp.pprint(drop_user('admin', 'hilyjiang', 'localhost'))
+    # pp.pprint(set_user_password('admin', 'ddyh', 'localhost', 'ddyh'))

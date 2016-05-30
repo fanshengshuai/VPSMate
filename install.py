@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -9,16 +9,16 @@
 
 """ Install Script for VPSMate """
 
+import getpass
 import os
-import sys
 import platform
 import shlex
-import subprocess
 import socket
-import getpass
+import subprocess
+import sys
+
 
 class Install(object):
-
     def __init__(self):
 
         self.user = getpass.getuser()
@@ -40,8 +40,6 @@ class Install(object):
         self.os = platform.system()
         print 'Platform %s %s [%s]' % (self.dist[0], self.dist[1], self.os)
 
-
-
     def _run(self, cmd, shell=False):
         if shell:
             return subprocess.call(cmd, shell=shell)
@@ -58,10 +56,10 @@ class Install(object):
                 supported = False
         elif self.os == 'Darwin':
             supported = True
-        #elif self.distname == 'ubuntu':
+        # elif self.distname == 'ubuntu':
         #    if float(self.version) < 10.10:
         #        supported = False
-        #elif self.distname == 'debian':
+        # elif self.distname == 'debian':
         #    if float(self.version) < 6.0:
         #        supported = False
         else:
@@ -101,18 +99,22 @@ class Install(object):
                 epelrpm = 'epel-release-5-4.noarch.rpm'
                 epelurl = 'http://download.fedoraproject.org/pub/epel/5/%s/%s' % (self.arch, epelrpm)
                 # install fastestmirror plugin for yum
-                fastestmirror = 'http://mirror.centos.org/centos/5/os/%s/CentOS/yum-fastestmirror-1.1.16-21.el5.centos.noarch.rpm' % (self.arch, )
+                fastestmirror = 'http://mirror.centos.org/centos/5/os/%s/CentOS/yum-fastestmirror-1.1.16-21.el5.centos.noarch.rpm' % (
+                    self.arch,)
                 self._run('rpm -Uvh %s' % fastestmirror)
             elif int(float(self.version)) == 6:
                 epelrpm = 'epel-release-6-7.noarch.rpm'
                 epelurl = 'http://download.fedoraproject.org/pub/epel/6/%s/' % (self.arch, epelrpm)
-                fastestmirror = 'http://mirror.centos.org/centos/6/os/%s/Packages/yum-plugin-fastestmirror-1.1.30-14.el6.noarch.rpm' % (self.arch, )
+                fastestmirror = 'http://mirror.centos.org/centos/6/os/%s/Packages/yum-plugin-fastestmirror-1.1.30-14.el6.noarch.rpm' % (
+                    self.arch,)
                 self._run('rpm -Uvh %s' % fastestmirror)
             elif int(float(self.version)) == 7:
                 epelrpm = 'epel-release-7-6.noarch.rpm'
                 epelurl = 'http://dl.fedoraproject.org/pub/epel/7/%s/e/%s' % (self.arch, epelrpm)
-                fastestmirror = 'http://mirror.centos.org/centos/7/os/%s/Packages/kabi-yum-plugins-1.0-3.el7.centos.noarch.rpm' % (self.arch, )
-                self._run('yum install -y wget net-tools vim psmisc rsync')
+                fastestmirror = 'http://mirror.centos.org/centos/7/os/%s/Packages/kabi-yum-plugins-1.0-3.el7.centos.noarch.rpm' % (
+                    self.arch,)
+                self._run('rpm -Uvh %s' % fastestmirror)
+
 
             self._run('wget -nv -c %s' % epelurl)
             self._run('rpm -Uvh %s' % epelrpm)
@@ -176,6 +178,11 @@ class Install(object):
         elif self.distname == 'debian':
             pass
 
+    def config_firewall(self):
+        self._run('iptables -A INPUT -p tcp --dport 8888 -j ACCEPT')
+        self._run('iptables -A OUTPUT -p tcp --sport 8888 -j ACCEPT')
+
+
     def config(self, username, password):
         self._run('%s/config.py username "%s"' % (self.installpath, username))
         self._run('%s/config.py password "%s"' % (self.installpath, password))
@@ -200,8 +207,8 @@ class Install(object):
             print 'OK'
 
         # check python version
-        print '* Current python version [%s.%s] ...' % (sys.version_info[:2][0],sys.version_info[:2][1]) ,
-	
+        print '* Current python version [%s.%s] ...' % (sys.version_info[:2][0], sys.version_info[:2][1]),
+
         if (sys.version_info[:2] == (2, 6) or sys.version_info[:2] == (2, 7)):
             print 'OK'
         else:
@@ -217,6 +224,9 @@ class Install(object):
             print 'OK'
         else:
             print 'FAILED'
+
+        print '* Install depend software ...'
+        self._run('yum install -y wget net-tools vim psmisc rsync libxslt-devel GeoIP GeoIP-devel gd gd-devel')
 
         # if sys.version_info[:2] == (2, 6):
         #     print 'OK'
@@ -254,6 +264,10 @@ class Install(object):
         print
         print '* Username and password set successfully!'
         print
+
+        print '* Config iptables'
+        self.config_firewall()
+
         print '* The URL of your VPSMate is:',
         print 'http://%s:8888/' % self.detect_ip()
         print

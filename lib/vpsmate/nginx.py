@@ -1567,7 +1567,7 @@ def addserver(server_names, listens, charset=None, index=None, locations=None,
                         servercfg.append('        proxy_cache_valid %s %s;' % (v['code'], v['time']))
                 if location.has_key('proxy_cache_use_stale'):
                     servercfg.append(
-                        '        proxy_cache_use_stale %s;' % (' '.join(location['proxy_cache_use_stale'])))
+                            '        proxy_cache_use_stale %s;' % (' '.join(location['proxy_cache_use_stale'])))
                 if location.has_key('proxy_cache_lock') and location['proxy_cache_lock']:
                     servercfg.append('        proxy_cache_lock on;')
                     if location.has_key('proxy_cache_lock_timeout'):

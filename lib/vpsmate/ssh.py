@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright (c) 2012, VPSMate development team
 # All rights reserved.
@@ -10,15 +10,16 @@
 """
 
 import os
+
 if __name__ == '__main__':
     import sys
+
     root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.insert(0, root_path)
 
 import re
 import pexpect
 import shlex
-
 
 SSHCFG = '/etc/ssh/sshd_config'
 
@@ -33,7 +34,7 @@ def loadconfig(cfgfile=None, detail=False):
         for line_i, line in enumerate(f):
             line = line.strip()
             if not line or line.startswith('# '): continue
-            
+
             # detect if it's commented
             if line.startswith('#'):
                 line = line.strip('#')
@@ -49,7 +50,7 @@ def loadconfig(cfgfile=None, detail=False):
             value = fs[1].strip()
 
             if settings.has_key(item):
-                if detail: count = settings[item]['count']+1
+                if detail: count = settings[item]['count'] + 1
                 if not commented:
                     settings[item] = detail and {
                         'file': cfgfile,
@@ -66,8 +67,9 @@ def loadconfig(cfgfile=None, detail=False):
                     'commented': commented,
                 } or value
             if detail: settings[item]['count'] = count
-            
+
     return settings
+
 
 def cfg_get(item, detail=False, config=None):
     """Get value of a config item.
@@ -78,6 +80,7 @@ def cfg_get(item, detail=False, config=None):
     else:
         return None
 
+
 def cfg_set(item, value, commented=False, config=None):
     """Set value of a config item.
     """
@@ -87,7 +90,7 @@ def cfg_set(item, value, commented=False, config=None):
     if v:
         # detect if value change
         if v['commented'] == commented and v['value'] == value: return True
-        
+
         # empty value should be commented
         if value == '': commented = True
 
@@ -117,13 +120,15 @@ def cfg_set(item, value, commented=False, config=None):
                             lines.append('%s %s\n' % (item, value))
                 else:
                     lines.append(line)
-        with open(v['file'], 'w') as f: f.write(''.join(lines))
+        with open(v['file'], 'w') as f:
+            f.write(''.join(lines))
     else:
         # append to the end of file
         with open(inifile, 'a') as f:
             f.write('\n%s%s = %s\n' % (commented and '#' or '', item, value))
-    
+
     return True
+
 
 def genkey(path, password=''):
     """Generate a ssh key pair.
@@ -159,6 +164,7 @@ def genkey(path, password=''):
     if child.isalive():
         return child.wait() == 0
     return True
+
 
 def chpasswd(path, oldpassword, newpassword):
     """Change password of a private key.
@@ -200,14 +206,14 @@ def chpasswd(path, oldpassword, newpassword):
 
 if __name__ == '__main__':
     import pprint
+
     pp = pprint.PrettyPrinter(indent=4)
-    
-    #pp.pprint(loadconfig())
-    #print cfg_get('Port')
-    #print cfg_get('Subsystem', detail=True)
-    #print cfg_set('Protocol', '2', commented=False)
-    #print cfg_set('Subsystem', 'sftp\t/usr/libexec/openssh/sftp-server', commented=True)
-    
-    #print genkey('/root/.ssh/sshkey_vpsmate')
-    #print chpasswd('/root/.ssh/sshkey_vpsmate', '', 'aaaaaa')
-    
+
+    # pp.pprint(loadconfig())
+    # print cfg_get('Port')
+    # print cfg_get('Subsystem', detail=True)
+    # print cfg_set('Protocol', '2', commented=False)
+    # print cfg_set('Subsystem', 'sftp\t/usr/libexec/openssh/sftp-server', commented=True)
+
+    # print genkey('/root/.ssh/sshkey_vpsmate')
+    # print chpasswd('/root/.ssh/sshkey_vpsmate', '', 'aaaaaa')
