@@ -277,7 +277,7 @@ class LoginHandler(RequestHandler):
         cfg_password = self.config.get('auth', 'password')
         if cfg_password == '':
             self.write({'code': -1,
-                        'msg': u'登录密码还未设置，请在服务器上执行以下命令进行设置：<br>' \
+                        'msg': u'登录密码还未设置，请在服务器上执行以下命令进行设置：<br>'
                                u'/usr/local/vpsmate/config.py password \'您的密码\''})
         elif username != cfg_username:  # wrong with username
             self.write({'code': -1, 'msg': u'用户不存在！'})
@@ -303,7 +303,7 @@ class LoginHandler(RequestHandler):
                     # lock 24 hours
                     self.config.set('runtime', 'loginlock', 'on')
                     self.config.set('runtime', 'loginlockexpire', int(time.time()) + 86400)
-                    self.write({'code': -1, 'msg': u'用户名或密码错误！<br>' \
+                    self.write({'code': -1, 'msg': u'用户名或密码错误！<br>'
                                                    u'已连续错误 5 次，登录已被禁止！'})
                 else:
                     self.write({'code': -1, 'msg': u'用户名或密码错误！<br>' \
@@ -2640,8 +2640,11 @@ class BackendHandler(RequestHandler):
 
         self._update_job(jobname, 2, u'正在获取软件源列表...')
 
+        tornado.gen.Task(call_subprocess, self, "export LC_ALL=en_US.UTF-8")
+
         cmd = 'yum repolist --disableplugin=fastestmirror'
         result, output = yield tornado.gen.Task(call_subprocess, self, cmd)
+        # print output
         data = []
         if result == 0:
             code = 0
@@ -2649,11 +2652,15 @@ class BackendHandler(RequestHandler):
             lines = output.split('\n')
             for line in lines:
                 if not line: continue
-                repo = line.split()[0]
+                repo = line.split()[0].replace("!",'')
+
                 if repo.find('/'):
                     repo = repo[0:repo.find('/')]
+
                 if repo in yum.yum_repolist:
                     data.append(repo)
+
+                # print yum.yum_repolist
         else:
             code = -1
             msg = u'获取软件源列表失败！<p style="margin:10px">%s</p>' % _d(output.strip().replace('\n', '<br>'))
