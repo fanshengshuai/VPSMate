@@ -685,7 +685,7 @@ class Service(object):
     def autostart_list(self):
         """Return a list of the autostart service name.
         """
-        startlevel = -1;
+        startlevel = -1
         with open('/etc/inittab') as f:
             for line in f:
                 if line.startswith('id:'):
