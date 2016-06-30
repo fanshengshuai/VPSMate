@@ -9,6 +9,8 @@
 
 import os
 import sys
+import subprocess
+import shlex
 
 root_path = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(root_path, 'lib'))
@@ -65,6 +67,8 @@ def main():
     cfg = vpsmate.config.Config(settings['data_path'] + '/config.ini')
     server_ip = cfg.get('server', 'ip')
     server_port = cfg.get('server', 'port')
+
+    # subprocess.call(shlex.split("set LANG=en"))
 
     server = tornado.httpserver.HTTPServer(application)
     server.listen(server_port, address=server_ip)
